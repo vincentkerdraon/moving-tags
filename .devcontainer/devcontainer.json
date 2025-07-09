@@ -1,0 +1,45 @@
+{
+    "name": "Angular Dev Container",
+    "image": "mcr.microsoft.com/devcontainers/javascript-node:latest",
+    "features": {
+        "ghcr.io/devcontainers/features/node:1": {
+            "version": "lts",
+            "installYarn": true
+        },
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers/features/docker-in-docker:2": {
+            "version": "latest"
+        }
+    },
+    "postCreateCommand": "npm install -g @angular/cli && npm install",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.shell.linux": "/bin/zsh",
+                "editor.formatOnSave": true,
+                "files.exclude": {
+                    "**/.angular": true,
+                    "**/dist": true,
+                    "**/node_modules": true
+                },
+                "typescript.tsdk": "node_modules/typescript/lib"
+            },
+            "extensions": [
+                "Angular.ng-template",
+                "esbenp.prettier-vscode",
+                "dbaeumer.vscode-eslint",
+                "eamodio.gitlens"
+            ]
+        }
+    },
+    "forwardPorts": [
+        4200
+    ],
+    "portsAttributes": {
+        "4200": {
+            "label": "Angular App",
+            "onAutoForward": "openPreview"
+        }
+    },
+    "remoteUser": "node"
+}
