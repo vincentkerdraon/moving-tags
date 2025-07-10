@@ -1,0 +1,50 @@
+<div class="container mt-4">
+  <h2 class="mb-4">Checkpoint</h2>
+
+  <ng-container *ngIf="tagSelected; else selectTagBlock">
+    <div class="mb-3">
+      <div class="d-flex align-items-center mb-2">
+        <span class="fw-bold">Checkpoint:</span>
+        <span class="ms-2 badge bg-primary">{{ selectedTag }}</span>
+        <button class="btn btn-link ms-3" (click)="tagSelected = false">Switch to another checkpoint</button>
+      </div>
+    </div>
+    <app-input-id (submitId)="onSubmitId($event)" (scanQr)="onScanQr()"></app-input-id>
+    <div class="row mt-4">
+      <div class="col-md-6">
+        <h5>Remaining Items</h5>
+        <ul class="list-group">
+          <li *ngFor="let item of remaining" class="list-group-item" (click)="onItemClick(item.id)" style="cursor:pointer;">
+            {{ item.id }}
+          </li>
+          <li *ngIf="remaining.length === 0" class="list-group-item text-muted">All items done!</li>
+        </ul>
+      </div>
+      <div class="col-md-6">
+        <h5>Done Items</h5>
+        <ul class="list-group">
+          <li *ngFor="let item of done" class="list-group-item" (click)="onItemClick(item.id)" style="cursor:pointer;">
+            {{ item.id }}
+          </li>
+          <li *ngIf="done.length === 0" class="list-group-item text-muted">No items done yet.</li>
+        </ul>
+      </div>
+    </div>
+  </ng-container>
+  <ng-template #selectTagBlock>
+    <div class="mb-3">
+      <label for="tagInput" class="form-label">Checkpoint Tag</label>
+      <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
+        <ng-container *ngFor="let tag of tagList">
+          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="onSelectTag(tag)">{{ tag }}</button>
+        </ng-container>
+      </div>
+      <input list="tagList" id="tagInput" class="form-control w-auto d-inline-block" style="max-width: 250px;" [(ngModel)]="tagInput" (ngModelChange)="onTagInputChange($event)">
+      <datalist id="tagList">
+        <option *ngFor="let tag of tagList" [value]="tag"></option>
+      </datalist>
+      <button class="btn btn-primary ms-2" (click)="onSelectTag(tagInput)" [disabled]="!tagInput">Select</button>
+    </div>
+    <div class="alert alert-info mt-4">Select or create a checkpoint tag to begin.</div>
+  </ng-template>
+</div>

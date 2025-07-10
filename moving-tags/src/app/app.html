@@ -19,7 +19,10 @@
     <div class="collapse navbar-collapse">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="#">Item List</a>
+          <a class="nav-link" [class.active]="tab === 'list'" href="#" (click)="setTab('list'); $event.preventDefault()">Item List</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" [class.active]="tab === 'checkpoint'" href="#" (click)="setTab('checkpoint'); $event.preventDefault()">Checkpoint</a>
         </li>
       </ul>
     </div>
@@ -42,6 +45,9 @@
     (editItem)="onEditItem($event)"
     (scanQr)="onScanQr()"
   ></app-item-list>
+</div>
+<div *ngIf="tab === 'checkpoint'">
+  <app-checkpoint [items]="items" [allTags]="[]"></app-checkpoint>
 </div>
 
 </body>

@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
+import { CheckpointComponent } from './components/checkpoint/checkpoint.component';
 import { EditItemComponent } from './components/edit-item/edit-item.component';
 import { ItemListComponent } from './components/item-list/item-list.component';
 import { Item } from './models/data.models';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, EditItemComponent, ItemListComponent],
+  imports: [CommonModule, EditItemComponent, ItemListComponent, CheckpointComponent],
   templateUrl: './app.html',
   styles: [],
   standalone: true,
@@ -16,10 +17,10 @@ export class App {
 
   items: Item[] = [];
   selectedId: string | null = null;
-  tab: 'edit' | 'list' = 'list';
+  tab: 'edit' | 'list' | 'checkpoint' = 'list';
 
   // Tab navigation
-  setTab(tab: 'edit' | 'list') {
+  setTab(tab: 'edit' | 'list' | 'checkpoint') {
     this.tab = tab;
     if (tab === 'edit' && !this.selectedId) {
       this.selectedId = null; // New item
