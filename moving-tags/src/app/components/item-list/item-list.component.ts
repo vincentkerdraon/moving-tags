@@ -2,11 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Item } from '../../models/data.models';
+import { InputIdComponent } from '../input-id/input-id.component';
 
 @Component({
   selector: 'app-item-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, InputIdComponent],
   templateUrl: './item-list.component.html'
 })
 export class ItemListComponent {
@@ -28,5 +29,9 @@ export class ItemListComponent {
     if (this.searchId.trim()) {
       this.editItem.emit(this.searchId.trim());
     }
+  }
+
+  onInputId(id: string) {
+    this.editItem.emit(id);
   }
 }

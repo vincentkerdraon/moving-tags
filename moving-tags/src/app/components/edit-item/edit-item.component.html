@@ -16,7 +16,7 @@
                 id="qrCodeId" 
                 name="qrCodeId"
                 class="form-control"
-                [value]="item?.id"
+                [value]="item.id"
                 readonly
               >
             </div>
@@ -26,7 +26,7 @@
             <div class="mb-4">
               <label class="form-label">Item Tags</label>
               <div class="mb-2 d-flex flex-wrap gap-2">
-                <span *ngFor="let tag of item?.itemTags" class="badge rounded-pill bg-primary d-flex align-items-center px-3 py-2 fs-6">
+                <span *ngFor="let tag of item.itemTags" class="badge rounded-pill bg-primary d-flex align-items-center px-3 py-2 fs-6">
                   {{ tag }}
                   <button type="button" class="btn-close btn-close-white ms-2" aria-label="Remove" (click)="removeItemTag(tag)"></button>
                 </span>
@@ -60,7 +60,7 @@
                 Checklist Tags <span class="text-muted small">(Optional)</span>
               </label>
               <div class="mb-2 d-flex flex-wrap gap-2">
-                <span *ngFor="let tag of item?.checklistTags" class="badge rounded-pill bg-info text-dark d-flex align-items-center px-3 py-2 fs-6">
+                <span *ngFor="let tag of item.checklistTags" class="badge rounded-pill bg-info text-dark d-flex align-items-center px-3 py-2 fs-6">
                   {{ tag }}
                   <button type="button" class="btn-close ms-2" aria-label="Remove" (click)="removeChecklistTag(tag)"></button>
                 </span>
@@ -95,7 +95,7 @@
                 <input type="file" class="form-control" accept="image/*" multiple (change)="onPhotoInput($event)">
               </div>
               <div class="d-flex flex-wrap gap-2">
-                <img *ngFor="let photo of item?.photos" [src]="photo.data" class="img-thumbnail" style="max-width: 100px; max-height: 100px;" alt="Item photo">
+                <img *ngFor="let photo of item.photos" [src]="photo.data" class="img-thumbnail" style="max-width: 100px; max-height: 100px;" alt="Item photo">
               </div>
             </div>
 

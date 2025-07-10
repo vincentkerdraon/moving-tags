@@ -2,13 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ChecklistTag, Item, ItemTag } from '../../models/data.models';
-import { ChecklistTagComponent } from '../checklist-tag/checklist-tag.component';
-import { ItemTagComponent } from '../item-tag/item-tag.component';
 
 @Component({
   selector: 'app-edit-item',
   standalone: true,
-  imports: [CommonModule, FormsModule, ItemTagComponent, ChecklistTagComponent],
+  imports: [CommonModule, FormsModule,  ],
   templateUrl: './edit-item.component.html'
 })
 export class EditItemComponent implements OnInit {
