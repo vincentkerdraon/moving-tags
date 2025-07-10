@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ChecklistTag, Item, ItemTag } from '../../models/data.models';
+import { ChecklistTag, Item, ItemTag, DestinationTag } from '../../models/data.models';
 
 @Component({
   selector: 'app-edit-item',
@@ -22,6 +22,8 @@ export class EditItemComponent implements OnInit {
   itemTagSuggestions: ItemTag[] = [];
   checklistTagSuggestions: ChecklistTag[] = [];
   confirmDelete = false;
+
+  destinationOptions = Object.values(DestinationTag);
 
   ngOnInit() {
     this.item = { ...this.item };

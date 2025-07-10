@@ -47,6 +47,10 @@
               <span *ngFor="let tag of popupItem.itemTags" class="badge rounded-pill bg-primary me-1">{{ tag }}</span>
               <span *ngFor="let tag of popupItem.checklistTags" class="badge rounded-pill bg-info text-dark me-1">{{ tag }}</span>
             </div>
+            <div class="mb-2">
+              <span *ngIf="popupItem.weight !== undefined">Weight: <b>{{ popupItem.weight }} kg</b></span>
+              <span *ngIf="popupItem.destination" class="ms-3">Destination: <b>{{ popupItem.destination }}</b></span>
+            </div>
             <div class="d-flex flex-wrap gap-2 mb-3">
               <img *ngFor="let photo of popupItem.photos" [src]="photo.data" class="img-thumbnail" style="max-width: 100px; max-height: 100px;" alt="Item photo">
               <span *ngIf="!popupItem.photos.length" class="text-muted">No photos</span>

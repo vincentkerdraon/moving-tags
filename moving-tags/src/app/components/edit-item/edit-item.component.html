@@ -22,6 +22,20 @@
         </div>
 
         <!-- 2. Data and Actions -->
+        <!-- Weight -->
+        <div class="mb-4">
+          <label class="form-label">Weight (kg)</label>
+          <input type="number" class="form-control" [(ngModel)]="item.weight" name="weight" min="0" step="0.01" placeholder="Enter weight (optional)">
+        </div>
+        <!-- Destination -->
+        <div class="mb-4">
+          <label class="form-label">Destination</label>
+          <select class="form-select" [(ngModel)]="item.destination" name="destination">
+            <option [ngValue]="undefined">Select destination (optional)</option>
+            <option *ngFor="let dest of destinationOptions" [ngValue]="dest">{{ dest | titlecase }}</option>
+          </select>
+        </div>
+
         <!-- Item Tags -->
         <div class="mb-4">
           <label class="form-label">Item Tags</label>
