@@ -1,4 +1,6 @@
 export type Id = string;
+export type PhotoId = string;
+export type ClientId = string;
 export type ItemTag = string;
 export type ChecklistTag = string;
 export enum DestinationTag {
@@ -7,8 +9,12 @@ export enum DestinationTag {
   Kitchen = 'kitchen',
   Bathroom = 'bathroom'
 }
+export enum ItemAction {
+   add="add", remove="remove", update="update"
+}
 
 export interface Photo {
+  id: PhotoId;
   data: string; // Base64 encoded binary data
 }
 
@@ -16,11 +22,29 @@ export interface Item {
   id: Id;
   itemTags: ItemTag[];
   checklistTags: ChecklistTag[];
-  photos: Photo[];
+  photos: PhotoId[];
   weight?: number; // Optional weight in kg
   destination?: DestinationTag;
 }
 
 export interface AppData {
   items: Item[];
+  photos: Photo[];
+  itemDeltas: ItemDelta[];
+}
+
+export interface ItemDelta {
+  time: Date;
+  id: Id;
+  action:ItemAction;
+  client:ClientId;
+
+  itemTagsAdded?: ItemTag[];
+  itemTagsRemoved?: ItemTag[];
+  checklistTagsAdded?: ChecklistTag[];
+  checklistTagsRemoved?: ChecklistTag[];
+  photosAdded?: PhotoId[];
+  photosRemoved?: PhotoId[];
+  weight?: number; 
+  destination?: DestinationTag;
 }

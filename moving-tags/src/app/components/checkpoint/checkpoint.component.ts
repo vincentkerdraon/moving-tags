@@ -4,13 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ChecklistTag, Item } from '../../models/data.models';
 import { ItemService } from '../../services/item.service';
+import { CheckpointValidationComponent } from '../checkpoint-validation/checkpoint-validation.component';
 import { EditItemComponent } from '../edit-item/edit-item.component';
 import { InputIdComponent } from '../input-id/input-id.component';
 
 @Component({
   selector: 'app-checkpoint',
   standalone: true,
-  imports: [CommonModule, FormsModule, InputIdComponent, EditItemComponent],
+  imports: [CommonModule, FormsModule, InputIdComponent, EditItemComponent, CheckpointValidationComponent],
   templateUrl: './checkpoint.component.html',
 })
 export class CheckpointComponent {

@@ -1,12 +1,109 @@
 import { Injectable } from '@angular/core';
-import { Item } from '../models/data.models';
+import { ChecklistTag, ClientId, Item, ItemAction, ItemDelta, ItemTag } from '../models/data.models';
+
+function generateClientId(): ClientId {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
 
 @Injectable({ providedIn: 'root' })
 export class ItemService {
   private _items: Item[] = [];
+  private _itemDeltas: ItemDelta[] = [];
+  allItemTags: Set<ItemTag> = new Set();
+  allChecklistTags: Set<ChecklistTag> = new Set();
+  readonly clientId: ClientId = generateClientId();
 
   get items(): Item[] {
     return this._items;
+  }
+
+  get itemDeltas(): ItemDelta[] {
+    return this._itemDeltas;
+  }
+
+  /**
+   * Save an item. Computes the diff, updates the item, and records the delta.
+   * Returns an error string if validation fails, otherwise void.
+   */
+  save(item: Item): string | void {
+    console.log('Saving item:', item);
+    if (!item.id || !item.id.trim()) {
+      return 'Item id is required.';
+    }
+    const idx = this._items.findIndex(i => i.id === item.id);
+    if (idx === -1 && this._items.some(i => i.id === item.id)) {
+      return 'Duplicate item id.';
+    }
+    const now = new Date();
+    let prev: Item | undefined;
+    if (idx !== -1) {
+      prev = this._items[idx];
+      this._items[idx] = { ...item };
+    } else {
+      this._items.push({ ...item });
+    }
+    // Update tag sets for autocompletion
+    item.itemTags.forEach(t => this.allItemTags.add(t));
+    item.checklistTags.forEach(t => this.allChecklistTags.add(t));
+    // Compute delta
+    const itemTagsAdded = prev ? item.itemTags.filter(t => !prev!.itemTags.includes(t)) : item.itemTags;
+    const itemTagsRemoved = prev ? prev!.itemTags.filter(t => !item.itemTags.includes(t)) : [];
+    const checklistTagsAdded = prev ? item.checklistTags.filter(t => !prev!.checklistTags.includes(t)) : item.checklistTags;
+    const checklistTagsRemoved = prev ? prev!.checklistTags.filter(t => !item.checklistTags.includes(t)) : [];
+    const photosAdded = prev ? item.photos.filter(p => !prev!.photos.includes(p)) : item.photos;
+    const photosRemoved = prev ? prev!.photos.filter(p => !item.photos.includes(p)) : [];
+    const delta: ItemDelta = {
+      time: now,
+      id: item.id,
+      action: idx === -1 ? ItemAction.add : ItemAction.update,
+      client:this.clientId,
+      ...(itemTagsAdded.length ? { itemTagsAdded } : {}),
+      ...(itemTagsRemoved.length ? { itemTagsRemoved } : {}),
+      ...(checklistTagsAdded.length ? { checklistTagsAdded } : {}),
+      ...(checklistTagsRemoved.length ? { checklistTagsRemoved } : {}),
+      ...(photosAdded.length ? { photosAdded } : {}),
+      ...(photosRemoved.length ? { photosRemoved } : {}),
+      ...(item.weight !== undefined ? { weight: item.weight } : {}),
+      ...(item.destination !== undefined ? { destination: item.destination } : {})
+    };
+    this._itemDeltas.push(delta);
+  }
+
+  /**
+   * Remove an item by id and record a delta.
+   */
+  removeItem(id: string) {
+    console.log('removeItem item:', id);
+    const idx = this._items.findIndex(i => i.id === id);
+    if (idx !== -1) {
+      const item = this._items[idx];
+      this._items.splice(idx, 1);
+      const now = new Date();
+      const delta: ItemDelta = {
+        time: now,
+        id,
+        action: ItemAction.remove,
+        client:this.clientId,
+        ...(item.itemTags.length ? { itemTagsRemoved: item.itemTags } : {}),
+        ...(item.checklistTags.length ? { checklistTagsRemoved: item.checklistTags } : {}),
+        ...(item.photos.length ? { photosRemoved: item.photos } : {}),
+        ...(item.weight !== undefined ? { weight: item.weight } : {}),
+        ...(item.destination !== undefined ? { destination: item.destination } : {})
+      };
+      this._itemDeltas.push(delta);
+    }
+  }
+
+  /**
+   * Rebuild tag sets for autocompletion (call after bulk import or sync).
+   */
+  rebuildTagSets() {
+    this.allItemTags.clear();
+    this.allChecklistTags.clear();
+    for (const item of this._items) {
+      item.itemTags.forEach(t => this.allItemTags.add(t));
+      item.checklistTags.forEach(t => this.allChecklistTags.add(t));
+    }
   }
 
   generateFakeData() {
@@ -22,7 +119,7 @@ export class ItemService {
           if (!tags.includes(tag)) tags.push(tag);
         }
       }
-      this._items.push({
+      this.save({
         id: `${i.toString().padStart(3, '0')}`,
         itemTags: tags,
         checklistTags: [checkpointTag],

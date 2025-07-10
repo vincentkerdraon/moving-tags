@@ -1,0 +1,39 @@
+<div *ngIf="popupItem" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.3);">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Item {{ popupItem.id }}</h5>
+      </div>
+      <div class="modal-body">
+        <div class="mb-2">
+          <span *ngFor="let tag of popupItem.itemTags" class="badge rounded-pill bg-primary me-1">{{ tag }}</span>
+          <span *ngFor="let tag of popupItem.checklistTags" class="badge rounded-pill bg-info text-dark me-1">{{ tag }}</span>
+        </div>
+        <div class="mb-2">
+          <span *ngIf="popupItem.weight !== undefined">Weight: <b>{{ popupItem.weight }} kg</b></span>
+          <span *ngIf="popupItem.destination" class="ms-3">Destination: <b>{{ popupItem.destination }}</b></span>
+        </div>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <img *ngFor="let photo of popupItem.photos" [src]="photo" class="img-thumbnail" style="max-width: 100px; max-height: 100px;" alt="Item photo">
+          <span *ngIf="!popupItem.photos.length" class="text-muted">No photos</span>
+        </div>
+        <div class="mb-2 position-relative" style="height: 42px;">
+          <div class="position-absolute top-0 start-0 w-100 h-100" style="z-index:0;">
+            <div class="progress h-100" style="background: transparent;">
+              <div class="progress-bar bg-info" role="progressbar" [style.width.%]="popupProgress" [attr.aria-valuenow]="popupProgress" aria-valuemin="0" aria-valuemax="100" style="opacity:0.3;"></div>
+            </div>
+          </div>
+          <div class="position-relative d-flex gap-2 justify-content-center align-items-center h-100" style="z-index:1;">
+            <button class="btn btn-outline-secondary flex-fill" (click)="keep.emit()" [disabled]="popupPreventClose">
+              Keep
+            </button>
+            <button class="btn btn-outline-danger flex-fill" (click)="close.emit()">
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div *ngIf="popupItem" class="modal-backdrop fade show"></div>

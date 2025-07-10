@@ -20,7 +20,9 @@
   <router-outlet></router-outlet>
 </main>
 
-<!-- Edit Item Popup -->
+<app-error [error]="errorService.error$ | async" (clear)="clearError()"></app-error>
+
+
 <div *ngIf="showEditPopup" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
@@ -32,11 +34,10 @@
         <app-edit-item
           *ngIf="popupItem"
           [item]="popupItem"
-          [items]="[]"
           (itemCreated)="onItemCreated($event)"
           (cancelled)="closeEditPopup()"
         ></app-edit-item>
       </div>
-    </div>
+    </div> 
   </div>
 </div>

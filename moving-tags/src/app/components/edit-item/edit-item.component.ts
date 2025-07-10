@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ChecklistTag, DestinationTag, Item, ItemTag } from '../../models/data.models';
+import { ErrorService } from '../../services/error.service';
+import { ItemService } from '../../services/item.service';
 
 @Component({
   selector: 'app-edit-item',
@@ -9,11 +11,7 @@ import { ChecklistTag, DestinationTag, Item, ItemTag } from '../../models/data.m
   imports: [CommonModule, FormsModule],
   templateUrl: './edit-item.component.html'
 })
-export class EditItemComponent implements OnInit, OnChanges {
-  @Input() existingItemTags: ItemTag[] = [];
-  @Input() existingChecklistTags: ChecklistTag[] = [];
-  @Input() allItemTags: ItemTag[] = [];
-  @Input() allChecklistTags: ChecklistTag[] = [];
+export class EditItemComponent implements OnInit {
   @Input() item!: Item;
   @Input() items: Item[] = [];
   @Output() itemCreated = new EventEmitter<Item>();
@@ -26,45 +24,44 @@ export class EditItemComponent implements OnInit, OnChanges {
   confirmDelete = false;
   destinationOptions = Object.values(DestinationTag);
 
-  ngOnInit() {
-    this.item = { ...this.item };
-    this.populateAllTags();
-  }
+  constructor(public itemService: ItemService, private errorService: ErrorService) {}
 
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['items'] && this.items) {
-      this.populateAllTags();
-    }
-  }
-
-  private populateAllTags() {
-    if ((!this.allItemTags.length || !this.allChecklistTags.length) && this.items && this.items.length) {
-      if (!this.allItemTags.length) {
-        this.allItemTags = Array.from(new Set(this.items.flatMap(i => i.itemTags)));
-      }
-      if (!this.allChecklistTags.length) {
-        this.allChecklistTags = Array.from(new Set(this.items.flatMap(i => i.checklistTags)));
-      }
-    }
-  }
+  ngOnInit() {}
 
   save() {
     if (this.item && this.item.id) {
-      this.itemCreated.emit({ ...this.item } as Item);
+      const err = this.itemService.save(this.item);
+      if (err) {
+        this.errorService.showError(err);
+        return;
+      }
+      this.itemCreated.emit({ ...this.item });
     }
   }
 
   addItemTag() {
-    if (this.item && this.newItemTag && this.newItemTag.trim() && !this.item.itemTags.includes(this.newItemTag.trim())) {
-      this.item.itemTags.push(this.newItemTag.trim());
+    const tag = this.newItemTag.trim();
+    if (this.item && tag && !this.item.itemTags.includes(tag)) {
+      const updated = { ...this.item, itemTags: [...this.item.itemTags, tag] };
+      const err = this.itemService.save(updated);
+      if (err) {
+        this.errorService.showError(err);
+        return;
+      }
       this.newItemTag = '';
       this.itemTagSuggestions = [];
     }
   }
 
   addChecklistTag() {
-    if (this.item && this.newChecklistTag && this.newChecklistTag.trim() && !this.item.checklistTags.includes(this.newChecklistTag.trim())) {
-      this.item.checklistTags.push(this.newChecklistTag.trim());
+    const tag = this.newChecklistTag.trim();
+    if (this.item && tag && !this.item.checklistTags.includes(tag)) {
+      const updated = { ...this.item, checklistTags: [...this.item.checklistTags, tag] };
+      const err = this.itemService.save(updated);
+      if (err) {
+        this.errorService.showError(err);
+        return;
+      }
       this.newChecklistTag = '';
       this.checklistTagSuggestions = [];
     }
@@ -72,20 +69,30 @@ export class EditItemComponent implements OnInit, OnChanges {
 
   removeItemTag(tag: ItemTag) {
     if (this.item) {
-      this.item.itemTags = this.item.itemTags.filter(t => t !== tag);
+      const updated = { ...this.item, itemTags: this.item.itemTags.filter(t => t !== tag) };
+      const err = this.itemService.save(updated);
+      if (err) {
+        this.errorService.showError(err);
+        return;
+      }
     }
   }
 
   removeChecklistTag(tag: ChecklistTag) {
     if (this.item) {
-      this.item.checklistTags = this.item.checklistTags.filter(t => t !== tag);
+      const updated = { ...this.item, checklistTags: this.item.checklistTags.filter(t => t !== tag) };
+      const err = this.itemService.save(updated);
+      if (err) {
+        this.errorService.showError(err);
+        return;
+      }
     }
   }
 
   onItemTagInput(event: any) {
     const input = event.target.value.toLowerCase();
-    if (input.length > 0 && this.item) {
-      this.itemTagSuggestions = this.allItemTags
+    if (input.length > 0) {
+      this.itemTagSuggestions = Array.from(this.itemService.allItemTags)
         .filter(tag => {
           const tagNorm = tag.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
           const inputNorm = input.normalize('NFD').replace(/\p{Diacritic}/gu, '');
@@ -99,7 +106,12 @@ export class EditItemComponent implements OnInit, OnChanges {
 
   addSuggestedItemTag(tag: ItemTag) {
     if (this.item && !this.item.itemTags.includes(tag)) {
-      this.item.itemTags.push(tag);
+      const updated = { ...this.item, itemTags: [...this.item.itemTags, tag] };
+      const err = this.itemService.save(updated);
+      if (err) {
+        this.errorService.showError(err);
+        return;
+      }
     }
     this.newItemTag = '';
     this.itemTagSuggestions = [];
@@ -107,8 +119,8 @@ export class EditItemComponent implements OnInit, OnChanges {
 
   onChecklistTagInput(event: any) {
     const input = event.target.value.toLowerCase();
-    if (input.length > 0 && this.item) {
-      this.checklistTagSuggestions = this.allChecklistTags
+    if (input.length > 0) {
+      this.checklistTagSuggestions = Array.from(this.itemService.allChecklistTags)
         .filter(tag => 
           tag.toLowerCase().includes(input) && 
           !this.item.checklistTags.includes(tag)
@@ -121,7 +133,12 @@ export class EditItemComponent implements OnInit, OnChanges {
 
   addSuggestedChecklistTag(tag: ChecklistTag) {
     if (this.item && !this.item.checklistTags.includes(tag)) {
-      this.item.checklistTags.push(tag);
+      const updated = { ...this.item, checklistTags: [...this.item.checklistTags, tag] };
+      const err = this.itemService.save(updated);
+      if (err) {
+        this.errorService.showError(err);
+        return;
+      }
     }
     this.newChecklistTag = '';
     this.checklistTagSuggestions = [];
@@ -131,12 +148,21 @@ export class EditItemComponent implements OnInit, OnChanges {
     const input = event.target as HTMLInputElement;
     if (!input.files || !this.item) return;
     const files = Array.from(input.files);
+    let updatedPhotos = [...this.item.photos];
     let loaded = 0;
     for (const file of files) {
       const reader = new FileReader();
       reader.onload = () => {
-        this.item!.photos.push({ data: reader.result as string });
+        updatedPhotos.push(reader.result as string);
         loaded++;
+        if (loaded === files.length) {
+          const updated = { ...this.item, photos: updatedPhotos };
+          const err = this.itemService.save(updated);
+          if (err) {
+            this.errorService.showError(err);
+            return;
+          }
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -144,8 +170,10 @@ export class EditItemComponent implements OnInit, OnChanges {
   }
 
   onDeleteItem() {
-    this.item = { id: '', itemTags: [], checklistTags: [], photos: [] };
-    this.confirmDelete = false;
+    if (this.item && this.item.id) {
+      this.itemService.removeItem(this.item.id);
+      this.confirmDelete = false;
+    }
   }
 
   onCancel() {

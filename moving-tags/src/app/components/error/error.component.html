@@ -1,0 +1,17 @@
+<div *ngIf="error" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-danger text-white">
+      <div class="modal-header">
+        <h5 class="modal-title">Error</h5>
+        <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="clear.emit()"></button>
+      </div>
+      <div class="modal-body text-center">
+        <div class="fs-5">{{ error }}</div>
+      </div>
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-light" (click)="clear.emit()">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div *ngIf="error" class="modal-backdrop fade show"></div>

@@ -1,5 +1,7 @@
 import { Item } from './models/data.models';
 
+//FIXME use model definition
+
 export interface AppState {
   items: Item[];
   selectedId: string | null;

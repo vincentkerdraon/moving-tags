@@ -103,7 +103,7 @@
         <input type="file" class="form-control" accept="image/*" multiple (change)="onPhotoInput($event)">
       </div>
       <div class="d-flex flex-wrap gap-2">
-        <img *ngFor="let photo of item.photos" [src]="photo.data" class="img-thumbnail" style="max-width: 100px; max-height: 100px;" alt="Item photo">
+        <img *ngFor="let photo of item.photos" [src]="photo" class="img-thumbnail" style="max-width: 100px; max-height: 100px;" alt="Item photo">
       </div>
     </div>
     <!-- Delete, Save & Close Buttons -->
