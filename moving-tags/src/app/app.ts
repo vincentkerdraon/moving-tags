@@ -19,6 +19,9 @@ export class App implements OnInit {
   selectedId: string | null = null;
   tab: 'edit' | 'list' | 'checkpoint' = 'list';
 
+  showEditPopup = false;
+  popupItemId: string | null = null;
+
   ngOnInit() {
     // Add 20 fake items with random tags and the checkpoint tag 'ready for movers'
     const checkpointTag = 'ready for movers';
@@ -90,5 +93,19 @@ export class App implements OnInit {
 
   private generateId(): string {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
+
+  openEditPopup = (id: string) => {
+    this.popupItemId = id;
+    this.showEditPopup = true;
+  };
+
+  closeEditPopup = () => {
+    this.showEditPopup = false;
+    this.popupItemId = null;
+  };
+
+  get popupItem(): Item | undefined {
+    return this.items.find(i => i.id === this.popupItemId);
   }
 }

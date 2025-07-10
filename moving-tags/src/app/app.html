@@ -40,12 +40,34 @@
 <div *ngIf="tab === 'list'">
   <app-item-list
     [items]="items"
-    (editItem)="onEditItem($event)"
+    (editItem)="openEditPopup($event)"
     (scanQr)="onScanQr()"
   ></app-item-list>
 </div>
 <div *ngIf="tab === 'checkpoint'">
-  <app-checkpoint [items]="items" [allTags]="[]"></app-checkpoint>
+  <app-checkpoint [items]="items" [allTags]="[]" [openEdit]="openEditPopup"></app-checkpoint>
+</div>
+
+<!-- Edit Item Popup -->
+<div *ngIf="showEditPopup" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Item</h5>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeEditPopup()"></button>
+      </div>
+      <div class="modal-body">
+        <app-edit-item
+          *ngIf="popupItem"
+          [item]="popupItem"
+          [existingItemTags]="[]"
+          [existingChecklistTags]="[]"
+          (itemCreated)="onItemCreated($event)"
+          (cancelled)="closeEditPopup()"
+        ></app-edit-item>
+      </div>
+    </div>
+  </div>
 </div>
 
 </body>
