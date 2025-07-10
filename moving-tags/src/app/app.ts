@@ -1,10 +1,9 @@
 import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { CreateItemComponent } from './components/create-item/create-item.component';
+import { EditItemComponent } from './components/edit-item/edit-item.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CreateItemComponent],
+  imports: [EditItemComponent],
   templateUrl: './app.html',
   styles: [],
 })

@@ -3,7 +3,7 @@
     <div class="col-md-8 col-lg-6">
       <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
-          <h2 class="mb-0 h4">Create New Item</h2>
+          <h2 class="mb-0 h4">Create or Edit Item</h2>
           <button class="btn-close" aria-label="Close" (click)="onCancel()"></button>
         </div>
         <div class="card-body">
@@ -32,13 +32,11 @@
             <!-- Item Tags -->
             <div class="mb-4">
               <label class="form-label">Item Tags</label>
-              <div class="mb-2">
-                <app-item-tag 
-                  *ngFor="let tag of item.itemTags" 
-                  [tag]="tag"
-                  [removable]="true"
-                  (removeTag)="removeItemTag($event)"
-                ></app-item-tag>
+              <div class="mb-2 d-flex flex-wrap gap-2">
+                <span *ngFor="let tag of item.itemTags" class="badge rounded-pill bg-primary d-flex align-items-center px-3 py-2 fs-6">
+                  {{ tag }}
+                  <button type="button" class="btn-close btn-close-white ms-2" aria-label="Remove" (click)="removeItemTag(tag)"></button>
+                </span>
               </div>
               <div class="input-group">
                 <input 
@@ -57,11 +55,9 @@
               </div>
               <div *ngIf="itemTagSuggestions.length > 0" class="mt-2">
                 <small class="text-muted">Suggestions:</small>
-                <app-item-tag 
-                  *ngFor="let suggestion of itemTagSuggestions" 
-                  [tag]="suggestion"
-                  (tagClick)="addSuggestedItemTag($event)"
-                ></app-item-tag>
+                <span *ngFor="let suggestion of itemTagSuggestions" class="badge rounded-pill bg-secondary me-2 pointer" style="cursor:pointer;" (click)="addSuggestedItemTag(suggestion)">
+                  {{ suggestion }}
+                </span>
               </div>
             </div>
 
@@ -70,13 +66,11 @@
               <label class="form-label">
                 Checklist Tags <span class="text-muted small">(Optional)</span>
               </label>
-              <div class="mb-2">
-                <app-checklist-tag 
-                  *ngFor="let tag of item.checklistTags" 
-                  [tag]="tag"
-                  [removable]="true"
-                  (removeTag)="removeChecklistTag($event)"
-                ></app-checklist-tag>
+              <div class="mb-2 d-flex flex-wrap gap-2">
+                <span *ngFor="let tag of item.checklistTags" class="badge rounded-pill bg-info text-dark d-flex align-items-center px-3 py-2 fs-6">
+                  {{ tag }}
+                  <button type="button" class="btn-close ms-2" aria-label="Remove" (click)="removeChecklistTag(tag)"></button>
+                </span>
               </div>
               <div class="input-group">
                 <input 
@@ -95,11 +89,9 @@
               </div>
               <div *ngIf="checklistTagSuggestions.length > 0" class="mt-2">
                 <small class="text-muted">Suggestions:</small>
-                <app-checklist-tag 
-                  *ngFor="let suggestion of checklistTagSuggestions" 
-                  [tag]="suggestion"
-                  (tagClick)="addSuggestedChecklistTag($event)"
-                ></app-checklist-tag>
+                <span *ngFor="let suggestion of checklistTagSuggestions" class="badge rounded-pill bg-secondary me-2 pointer" style="cursor:pointer;" (click)="addSuggestedChecklistTag(suggestion)">
+                  {{ suggestion }}
+                </span>
               </div>
             </div>
 

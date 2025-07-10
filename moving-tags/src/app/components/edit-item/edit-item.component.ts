@@ -6,12 +6,12 @@ import { ChecklistTagComponent } from '../checklist-tag/checklist-tag.component'
 import { ItemTagComponent } from '../item-tag/item-tag.component';
 
 @Component({
-  selector: 'app-create-item',
+  selector: 'app-edit-item',
   standalone: true,
   imports: [CommonModule, FormsModule, ItemTagComponent, ChecklistTagComponent],
-  templateUrl: './create-item.component.html'
+  templateUrl: './edit-item.component.html'
 })
-export class CreateItemComponent implements OnInit {
+export class EditItemComponent implements OnInit {
   @Input() existingItemTags: ItemTag[] = [];
   @Input() existingChecklistTags: ChecklistTag[] = [];
   @Output() itemCreated = new EventEmitter<Item>();
@@ -31,16 +31,18 @@ export class CreateItemComponent implements OnInit {
   confirmDelete = false;
 
   ngOnInit() {
-    // Generate a default ID if none provided
     if (!this.item.id) {
       this.item.id = this.generateId();
     }
   }
 
+  private upsertItem() {
+    this.itemCreated.emit({ ...this.item });
+  }
+
   onScanQR() {
-    // TODO: Implement QR code scanning
-    // For now, generate a random ID
     this.item.id = this.generateId();
+    this.upsertItem();
     alert('QR scanning not implemented yet. Generated ID: ' + this.item.id);
   }
 
@@ -49,6 +51,7 @@ export class CreateItemComponent implements OnInit {
       this.item.itemTags.push(this.newItemTag.trim());
       this.newItemTag = '';
       this.itemTagSuggestions = [];
+      this.upsertItem();
     }
   }
 
@@ -57,20 +60,24 @@ export class CreateItemComponent implements OnInit {
       this.item.checklistTags.push(this.newChecklistTag.trim());
       this.newChecklistTag = '';
       this.checklistTagSuggestions = [];
+      this.upsertItem();
     }
   }
 
   removeItemTag(tag: ItemTag) {
     this.item.itemTags = this.item.itemTags.filter(t => t !== tag);
+    this.upsertItem();
   }
 
   removeChecklistTag(tag: ChecklistTag) {
     this.item.checklistTags = this.item.checklistTags.filter(t => t !== tag);
+    this.upsertItem();
   }
 
   addSuggestedItemTag(tag: ItemTag) {
     if (!this.item.itemTags.includes(tag)) {
       this.item.itemTags.push(tag);
+      this.upsertItem();
     }
     this.itemTagSuggestions = [];
   }
@@ -78,6 +85,7 @@ export class CreateItemComponent implements OnInit {
   addSuggestedChecklistTag(tag: ChecklistTag) {
     if (!this.item.checklistTags.includes(tag)) {
       this.item.checklistTags.push(tag);
+      this.upsertItem();
     }
     this.checklistTagSuggestions = [];
   }
@@ -110,24 +118,19 @@ export class CreateItemComponent implements OnInit {
     }
   }
 
-  onSubmit() {
-    if (this.item.id) {
-      this.itemCreated.emit({ ...this.item });
-    }
-  }
-
-  onCancel() {
-    this.cancelled.emit();
-  }
-
   onPhotoInput(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files) return;
     const files = Array.from(input.files);
+    let loaded = 0;
     for (const file of files) {
       const reader = new FileReader();
       reader.onload = () => {
         this.item.photos.push({ data: reader.result as string });
+        loaded++;
+        if (loaded === files.length) {
+          this.upsertItem();
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -135,10 +138,13 @@ export class CreateItemComponent implements OnInit {
   }
 
   onDeleteItem() {
-    // Clear the item and close the modal
     this.item = { id: '', itemTags: [], checklistTags: [], photos: [] };
     this.confirmDelete = false;
-    // Optionally emit a delete event or handle as needed
+  }
+
+  onCancel() {
+    // Optionally emit a cancel event or handle navigation
+    this.cancelled.emit();
   }
 
   private generateId(): string {
