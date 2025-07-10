@@ -32,8 +32,7 @@
         <app-edit-item
           *ngIf="popupItem"
           [item]="popupItem"
-          [existingItemTags]="[]"
-          [existingChecklistTags]="[]"
+          [items]="[]"
           (itemCreated)="onItemCreated($event)"
           (cancelled)="closeEditPopup()"
         ></app-edit-item>

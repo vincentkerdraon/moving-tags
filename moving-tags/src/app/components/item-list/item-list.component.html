@@ -42,8 +42,7 @@
         <div class="modal-body">
           <app-edit-item
             [item]="editingItem"
-            [existingItemTags]="[]"
-            [existingChecklistTags]="[]"
+            [items]="items"
             (itemCreated)="onModalSave($event)"
             (cancelled)="onModalCancel()"
           ></app-edit-item>

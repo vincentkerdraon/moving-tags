@@ -1,32 +1,51 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ChecklistTag, Item, ItemTag, DestinationTag } from '../../models/data.models';
+import { ChecklistTag, DestinationTag, Item, ItemTag } from '../../models/data.models';
 
 @Component({
   selector: 'app-edit-item',
   standalone: true,
-  imports: [CommonModule, FormsModule,  ],
+  imports: [CommonModule, FormsModule],
   templateUrl: './edit-item.component.html'
 })
-export class EditItemComponent implements OnInit {
+export class EditItemComponent implements OnInit, OnChanges {
   @Input() existingItemTags: ItemTag[] = [];
   @Input() existingChecklistTags: ChecklistTag[] = [];
+  @Input() allItemTags: ItemTag[] = [];
+  @Input() allChecklistTags: ChecklistTag[] = [];
+  @Input() item!: Item;
+  @Input() items: Item[] = [];
   @Output() itemCreated = new EventEmitter<Item>();
   @Output() cancelled = new EventEmitter<void>();
-
-  @Input() item!: Item;
 
   newItemTag = '';
   newChecklistTag = '';
   itemTagSuggestions: ItemTag[] = [];
   checklistTagSuggestions: ChecklistTag[] = [];
   confirmDelete = false;
-
   destinationOptions = Object.values(DestinationTag);
 
   ngOnInit() {
     this.item = { ...this.item };
+    this.populateAllTags();
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    if (changes['items'] && this.items) {
+      this.populateAllTags();
+    }
+  }
+
+  private populateAllTags() {
+    if ((!this.allItemTags.length || !this.allChecklistTags.length) && this.items && this.items.length) {
+      if (!this.allItemTags.length) {
+        this.allItemTags = Array.from(new Set(this.items.flatMap(i => i.itemTags)));
+      }
+      if (!this.allChecklistTags.length) {
+        this.allChecklistTags = Array.from(new Set(this.items.flatMap(i => i.checklistTags)));
+      }
+    }
   }
 
   private upsertItem() {
@@ -67,12 +86,42 @@ export class EditItemComponent implements OnInit {
     }
   }
 
+  onItemTagInput(event: any) {
+    const input = event.target.value.toLowerCase();
+    if (input.length > 0 && this.item) {
+      this.itemTagSuggestions = this.allItemTags
+        .filter(tag => {
+          const tagNorm = tag.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+          const inputNorm = input.normalize('NFD').replace(/\p{Diacritic}/gu, '');
+          return tagNorm.includes(inputNorm) && !this.item.itemTags.includes(tag);
+        })
+        .slice(0, 5);
+    } else {
+      this.itemTagSuggestions = [];
+    }
+  }
+
   addSuggestedItemTag(tag: ItemTag) {
     if (this.item && !this.item.itemTags.includes(tag)) {
       this.item.itemTags.push(tag);
       this.upsertItem();
     }
+    this.newItemTag = '';
     this.itemTagSuggestions = [];
+  }
+
+  onChecklistTagInput(event: any) {
+    const input = event.target.value.toLowerCase();
+    if (input.length > 0 && this.item) {
+      this.checklistTagSuggestions = this.allChecklistTags
+        .filter(tag => 
+          tag.toLowerCase().includes(input) && 
+          !this.item.checklistTags.includes(tag)
+        )
+        .slice(0, 5);
+    } else {
+      this.checklistTagSuggestions = [];
+    }
   }
 
   addSuggestedChecklistTag(tag: ChecklistTag) {
@@ -80,35 +129,8 @@ export class EditItemComponent implements OnInit {
       this.item.checklistTags.push(tag);
       this.upsertItem();
     }
+    this.newChecklistTag = '';
     this.checklistTagSuggestions = [];
-  }
-
-  onItemTagInput(event: any) {
-    const input = event.target.value.toLowerCase();
-    if (input.length > 0 && this.item) {
-      this.itemTagSuggestions = this.existingItemTags
-        .filter(tag => 
-          tag.toLowerCase().includes(input) && 
-          !this.item!.itemTags.includes(tag)
-        )
-        .slice(0, 5);
-    } else {
-      this.itemTagSuggestions = [];
-    }
-  }
-
-  onChecklistTagInput(event: any) {
-    const input = event.target.value.toLowerCase();
-    if (input.length > 0 && this.item) {
-      this.checklistTagSuggestions = this.existingChecklistTags
-        .filter(tag => 
-          tag.toLowerCase().includes(input) && 
-          !this.item!.checklistTags.includes(tag)
-        )
-        .slice(0, 5);
-    } else {
-      this.checklistTagSuggestions = [];
-    }
   }
 
   onPhotoInput(event: Event) {
@@ -136,11 +158,6 @@ export class EditItemComponent implements OnInit {
   }
 
   onCancel() {
-    // Optionally emit a cancel event or handle navigation
     this.cancelled.emit();
-  }
-
-  private generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
   }
 }

@@ -1,148 +1,138 @@
 <div class="container py-4">
-  <div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
-
-      <form>
-        <!-- 1. QR Code or Manual ID -->
-        <div class="mb-4">
-          <div class="input-group">
-            <span class="input-group-text" id="item-id-label">Item ID</span>
-            <input 
-              type="text" 
-              id="qrCodeId" 
-              name="qrCodeId"
-                class="form-control"
-                disabled
-              [value]="item.id"
-              readonly
-              aria-label="Item ID"
-              aria-describedby="item-id-label"
-            >
-          </div>
+  <form>
+    <!-- 1. QR Code or Manual ID -->
+    <div class="mb-4">
+      <div class="input-group">
+        <span class="input-group-text" id="item-id-label">Item ID</span>
+        <input 
+          type="text" 
+          id="qrCodeId" 
+          name="qrCodeId"
+          class="form-control"
+          disabled
+          [value]="item.id"
+          readonly
+          aria-label="Item ID"
+          aria-describedby="item-id-label"
+        >
+      </div>
+    </div>
+    <!-- Weight -->
+    <div class="mb-4">
+      <label class="form-label">Weight (kg)</label>
+      <input type="number" class="form-control" [(ngModel)]="item.weight" name="weight" min="0" step="0.01" placeholder="Enter weight (optional)">
+    </div>
+    <!-- Destination -->
+    <div class="mb-4">
+      <label class="form-label">Destination</label>
+      <select class="form-select" [(ngModel)]="item.destination" name="destination">
+        <option [ngValue]="undefined">Select destination (optional)</option>
+        <option *ngFor="let dest of destinationOptions" [ngValue]="dest">{{ dest | titlecase }}</option>
+      </select>
+    </div>
+    <!-- Item Tags -->
+    <div class="mb-4">
+      <label class="form-label">Item Tags</label>
+      <div class="mb-2 d-flex flex-wrap gap-2">
+        <span *ngFor="let tag of item.itemTags" class="badge rounded-pill bg-primary d-flex align-items-center px-3 py-2 fs-6">
+          {{ tag }}
+          <button type="button" class="btn-close btn-close-white ms-2" aria-label="Remove" (click)="removeItemTag(tag)"></button>
+        </span>
+      </div>
+       <div *ngIf="itemTagSuggestions.length > 0" class="mt-2">
+        <small class="text-muted">Suggestions:</small>
+        <span *ngFor="let suggestion of itemTagSuggestions" class="badge rounded-pill bg-secondary me-2 pointer" style="cursor:pointer;" (click)="addSuggestedItemTag(suggestion)">
+          {{ suggestion }}
+        </span>
+      </div>
+      <div class="input-group mb-1">
+        <input 
+          type="text" 
+          class="form-control"
+          placeholder="Add item tag..."
+          [(ngModel)]="newItemTag"
+          name="newItemTag"
+          (keyup.enter)="addItemTag()"
+          (input)="onItemTagInput($event)"
+          #itemTagInput
+        >
+        <button type="button" class="btn btn-primary" (click)="addItemTag()" [disabled]="!newItemTag.trim()">
+          Add
+        </button>
+      </div>
+     
+    </div>
+    <!-- Checklist Tags (Optional) -->
+    <div class="mb-4">
+      <label class="form-label">
+        Checklist Tags <span class="text-muted small">(Optional)</span>
+      </label>
+      <div class="mb-2 d-flex flex-wrap gap-2">
+        <span *ngFor="let tag of item.checklistTags" class="badge rounded-pill bg-info text-dark d-flex align-items-center px-3 py-2 fs-6">
+          {{ tag }}
+          <button type="button" class="btn-close ms-2" aria-label="Remove" (click)="removeChecklistTag(tag)"></button>
+        </span>
+      </div>
+       <div *ngIf="checklistTagSuggestions.length > 0" class="mt-2">
+        <small class="text-muted">Suggestions:</small>
+        <span *ngFor="let suggestion of checklistTagSuggestions" class="badge rounded-pill bg-secondary me-2 pointer" style="cursor:pointer;" (click)="addSuggestedChecklistTag(suggestion)">
+          {{ suggestion }}
+        </span>
+      </div>
+      <div class="input-group">
+        <input 
+          type="text" 
+          class="form-control"
+          placeholder="Add checklist tag (optional)..."
+          [(ngModel)]="newChecklistTag"
+          name="newChecklistTag"
+          (keyup.enter)="addChecklistTag()"
+          (input)="onChecklistTagInput($event)"
+          #checklistTagInput
+        >
+        <button type="button" class="btn btn-primary" (click)="addChecklistTag()" [disabled]="!newChecklistTag.trim()">
+          Add
+        </button>
+      </div>
+     
+    </div>
+    <!-- Take Pictures -->
+    <div class="mb-4">
+      <label class="form-label">Photos</label>
+      <div class="mb-2">
+        <input type="file" class="form-control" accept="image/*" multiple (change)="onPhotoInput($event)">
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <img *ngFor="let photo of item.photos" [src]="photo.data" class="img-thumbnail" style="max-width: 100px; max-height: 100px;" alt="Item photo">
+      </div>
+    </div>
+    <!-- Delete & Close Buttons -->
+    <div class="d-flex justify-content-between align-items-center mt-4 gap-2">
+      <button type="button" class="btn btn-danger" (click)="confirmDelete = true">
+        Delete Item
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="onCancel()">
+        Close
+      </button>
+    </div>
+  </form>
+  <!-- Delete Confirmation Modal -->
+  <div class="modal fade show" tabindex="-1" style="display: block; background: rgba(0,0,0,0.5);" *ngIf="confirmDelete">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Delete Item</h5>
+          <button type="button" class="btn-close" aria-label="Close" (click)="confirmDelete = false"></button>
         </div>
-
-        <!-- 2. Data and Actions -->
-        <!-- Weight -->
-        <div class="mb-4">
-          <label class="form-label">Weight (kg)</label>
-          <input type="number" class="form-control" [(ngModel)]="item.weight" name="weight" min="0" step="0.01" placeholder="Enter weight (optional)">
+        <div class="modal-body">
+          <p>Are you sure you want to delete this item? This action cannot be undone.</p>
         </div>
-        <!-- Destination -->
-        <div class="mb-4">
-          <label class="form-label">Destination</label>
-          <select class="form-select" [(ngModel)]="item.destination" name="destination">
-            <option [ngValue]="undefined">Select destination (optional)</option>
-            <option *ngFor="let dest of destinationOptions" [ngValue]="dest">{{ dest | titlecase }}</option>
-          </select>
-        </div>
-
-        <!-- Item Tags -->
-        <div class="mb-4">
-          <label class="form-label">Item Tags</label>
-          <div class="mb-2 d-flex flex-wrap gap-2">
-            <span *ngFor="let tag of item.itemTags" class="badge rounded-pill bg-primary d-flex align-items-center px-3 py-2 fs-6">
-              {{ tag }}
-              <button type="button" class="btn-close btn-close-white ms-2" aria-label="Remove" (click)="removeItemTag(tag)"></button>
-            </span>
-          </div>
-          <div class="input-group">
-            <input 
-              type="text" 
-              class="form-control"
-              placeholder="Add item tag..."
-              [(ngModel)]="newItemTag"
-              name="newItemTag"
-              (keyup.enter)="addItemTag()"
-              (input)="onItemTagInput($event)"
-              #itemTagInput
-            >
-            <button type="button" class="btn btn-primary" (click)="addItemTag()" [disabled]="!newItemTag.trim()">
-              Add
-            </button>
-          </div>
-          <div *ngIf="itemTagSuggestions.length > 0" class="mt-2">
-            <small class="text-muted">Suggestions:</small>
-            <span *ngFor="let suggestion of itemTagSuggestions" class="badge rounded-pill bg-secondary me-2 pointer" style="cursor:pointer;" (click)="addSuggestedItemTag(suggestion)">
-              {{ suggestion }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Checklist Tags (Optional) -->
-        <div class="mb-4">
-          <label class="form-label">
-            Checklist Tags <span class="text-muted small">(Optional)</span>
-          </label>
-          <div class="mb-2 d-flex flex-wrap gap-2">
-            <span *ngFor="let tag of item.checklistTags" class="badge rounded-pill bg-info text-dark d-flex align-items-center px-3 py-2 fs-6">
-              {{ tag }}
-              <button type="button" class="btn-close ms-2" aria-label="Remove" (click)="removeChecklistTag(tag)"></button>
-            </span>
-          </div>
-          <div class="input-group">
-            <input 
-              type="text" 
-              class="form-control"
-              placeholder="Add checklist tag (optional)..."
-              [(ngModel)]="newChecklistTag"
-              name="newChecklistTag"
-              (keyup.enter)="addChecklistTag()"
-              (input)="onChecklistTagInput($event)"
-              #checklistTagInput
-            >
-            <button type="button" class="btn btn-primary" (click)="addChecklistTag()" [disabled]="!newChecklistTag.trim()">
-              Add
-            </button>
-          </div>
-          <div *ngIf="checklistTagSuggestions.length > 0" class="mt-2">
-            <small class="text-muted">Suggestions:</small>
-            <span *ngFor="let suggestion of checklistTagSuggestions" class="badge rounded-pill bg-secondary me-2 pointer" style="cursor:pointer;" (click)="addSuggestedChecklistTag(suggestion)">
-              {{ suggestion }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Take Pictures -->
-        <div class="mb-4">
-          <label class="form-label">Photos</label>
-          <div class="mb-2">
-            <input type="file" class="form-control" accept="image/*" multiple (change)="onPhotoInput($event)">
-          </div>
-          <div class="d-flex flex-wrap gap-2">
-            <img *ngFor="let photo of item.photos" [src]="photo.data" class="img-thumbnail" style="max-width: 100px; max-height: 100px;" alt="Item photo">
-          </div>
-        </div>
-
-        <!-- Delete & Close Buttons -->
-        <div class="d-flex justify-content-between align-items-center mt-4 gap-2">
-          <button type="button" class="btn btn-danger">
-            Delete Item
-          </button>
-          <button type="button" class="btn btn-secondary" (click)="onCancel()">
-            Close
-          </button>
-        </div>
-      </form>
-
-      <!-- Delete Confirmation Modal -->
-      <div class="modal fade show" tabindex="-1" style="display: block; background: rgba(0,0,0,0.5);" *ngIf="confirmDelete">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Delete Item</h5>
-              <button type="button" class="btn-close" aria-label="Close" (click)="confirmDelete = false"></button>
-            </div>
-            <div class="modal-body">
-              <p>Are you sure you want to delete this item? This action cannot be undone.</p>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" (click)="confirmDelete = false">Cancel</button>
-              <button type="button" class="btn btn-danger" (click)="onDeleteItem()">Delete</button>
-            </div>
-          </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="confirmDelete = false">Cancel</button>
+          <button type="button" class="btn btn-danger" (click)="onDeleteItem()">Delete</button>
         </div>
       </div>
-      <div *ngIf="confirmDelete" class="modal-backdrop fade show"></div>
     </div>
   </div>
+  <div *ngIf="confirmDelete" class="modal-backdrop fade show"></div>
 </div>
