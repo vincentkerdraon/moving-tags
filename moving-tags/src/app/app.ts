@@ -3,11 +3,12 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CheckpointComponent } from './components/checkpoint/checkpoint.component';
 import { EditItemComponent } from './components/edit-item/edit-item.component';
 import { ItemListComponent } from './components/item-list/item-list.component';
+import { QrPrintComponent } from './components/qr-print/qr-print.component';
 import { Item } from './models/data.models';
 
 @Component({
   selector: 'app-root',
-  imports: [CommonModule, EditItemComponent, ItemListComponent, CheckpointComponent],
+  imports: [CommonModule, EditItemComponent, ItemListComponent, CheckpointComponent, QrPrintComponent],
   templateUrl: './app.html',
   styles: [],
   standalone: true,
@@ -17,7 +18,7 @@ export class App implements OnInit {
 
   items: Item[] = [];
   selectedId: string | null = null;
-  tab: 'edit' | 'list' | 'checkpoint' = 'list';
+  tab: 'edit' | 'list' | 'checkpoint' | 'qrprint' = 'list';
 
   showEditPopup = false;
   popupItemId: string | null = null;
@@ -46,7 +47,7 @@ export class App implements OnInit {
   }
 
   // Tab navigation
-  setTab(tab: 'edit' | 'list' | 'checkpoint') {
+  setTab(tab: 'edit' | 'list' | 'checkpoint' | 'qrprint') {
     this.tab = tab;
     if (tab === 'edit' && !this.selectedId) {
       this.selectedId = null; // New item

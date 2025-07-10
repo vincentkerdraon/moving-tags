@@ -1,0 +1,33 @@
+.print-container {
+  padding: 1.5rem;
+}
+.row.mb-4 {
+  margin-bottom: 0.0rem !important;
+}
+@media print {
+  .print-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    background: white;
+    padding: 0;
+    margin: 0;
+    visibility: visible !important;
+  }
+  .d-print-none, .form-label, #idsInput, label[for="idsInput"] {
+    display: none !important;
+  }
+  .row.mb-4 {
+    page-break-inside: avoid;
+    margin-bottom: -0.0rem !important;
+  }
+  .col-2 {
+    padding: 0.5rem 0.2rem;
+  }
+  .qr-label {
+    font-size: 0.9rem;
+    margin-top: 0.3rem;
+    word-break: break-all;
+  }
+}
