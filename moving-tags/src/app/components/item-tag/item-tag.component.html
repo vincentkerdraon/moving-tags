@@ -1,0 +1,15 @@
+<span 
+  class="item-tag"
+  [class.removable]="removable"
+  (click)="onTagClick()"
+>
+  {{ tag }}
+  <button 
+    *ngIf="removable" 
+    class="remove-btn"
+    (click)="onRemove($event)"
+    type="button"
+  >
+    ×
+  </button>
+</span>

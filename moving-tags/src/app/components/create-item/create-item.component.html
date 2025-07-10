@@ -1,0 +1,110 @@
+<div class="create-item-container">
+  <div class="header">
+    <h2>Create New Item</h2>
+    <button class="close-btn" (click)="onCancel()" type="button">×</button>
+  </div>
+
+  <form (ngSubmit)="onSubmit()" #itemForm="ngForm">
+    <!-- QR Code Section -->
+    <div class="form-section">
+      <label for="qrCodeId">QR Code ID</label>
+      <div class="qr-input-container">
+        <input 
+          type="text" 
+          id="qrCodeId" 
+          name="qrCodeId"
+          [(ngModel)]="item.id"
+          placeholder="Scan QR code or enter ID manually"
+          required
+          readonly
+        >
+        <button type="button" class="scan-btn" (click)="onScanQR()">
+          📷 Scan QR
+        </button>
+      </div>
+    </div>
+
+    <!-- Item Tags Section -->
+    <div class="form-section">
+      <label>Item Tags</label>
+      <div class="tags-container">
+        <app-item-tag 
+          *ngFor="let tag of item.itemTags" 
+          [tag]="tag"
+          [removable]="true"
+          (removeTag)="removeItemTag($event)"
+        ></app-item-tag>
+      </div>
+      <div class="tag-input-container">
+        <input 
+          type="text" 
+          placeholder="Add item tag..."
+          [(ngModel)]="newItemTag"
+          name="newItemTag"
+          (keyup.enter)="addItemTag()"
+          (input)="onItemTagInput($event)"
+          #itemTagInput
+        >
+        <button type="button" (click)="addItemTag()" [disabled]="!newItemTag.trim()">
+          Add
+        </button>
+      </div>
+      <div class="suggestions" *ngIf="itemTagSuggestions.length > 0">
+        <div class="suggestion-label">Suggestions:</div>
+        <app-item-tag 
+          *ngFor="let suggestion of itemTagSuggestions" 
+          [tag]="suggestion"
+          (tagClick)="addSuggestedItemTag($event)"
+        ></app-item-tag>
+      </div>
+    </div>
+
+    <!-- Checklist Tags Section (Optional) -->
+    <div class="form-section optional">
+      <label>
+        Checklist Tags 
+        <span class="optional-label">(Optional)</span>
+      </label>
+      <div class="tags-container">
+        <app-checklist-tag 
+          *ngFor="let tag of item.checklistTags" 
+          [tag]="tag"
+          [removable]="true"
+          (removeTag)="removeChecklistTag($event)"
+        ></app-checklist-tag>
+      </div>
+      <div class="tag-input-container">
+        <input 
+          type="text" 
+          placeholder="Add checklist tag (optional)..."
+          [(ngModel)]="newChecklistTag"
+          name="newChecklistTag"
+          (keyup.enter)="addChecklistTag()"
+          (input)="onChecklistTagInput($event)"
+          #checklistTagInput
+        >
+        <button type="button" (click)="addChecklistTag()" [disabled]="!newChecklistTag.trim()">
+          Add
+        </button>
+      </div>
+      <div class="suggestions" *ngIf="checklistTagSuggestions.length > 0">
+        <div class="suggestion-label">Suggestions:</div>
+        <app-checklist-tag 
+          *ngFor="let suggestion of checklistTagSuggestions" 
+          [tag]="suggestion"
+          (tagClick)="addSuggestedChecklistTag($event)"
+        ></app-checklist-tag>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="form-actions">
+      <button type="button" class="cancel-btn" (click)="onCancel()">
+        Cancel
+      </button>
+      <button type="submit" class="create-btn" [disabled]="!itemForm.valid">
+        Create Item
+      </button>
+    </div>
+  </form>
+</div>
