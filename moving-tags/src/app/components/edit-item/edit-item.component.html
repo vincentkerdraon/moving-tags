@@ -1,20 +1,18 @@
 <div class="container py-4">
   <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
-      <div class="mb-3">
-        <h2 class="mb-0 h4">Create or Edit Item</h2>
-      </div>
+
       <form>
         <!-- 1. QR Code or Manual ID -->
         <div class="mb-4">
-          <label class="form-label " for="qrCodeId">Item ID</label>
           <div class="input-group">
             <span class="input-group-text" id="item-id-label">Item ID</span>
             <input 
               type="text" 
               id="qrCodeId" 
               name="qrCodeId"
-              class="form-control"
+                class="form-control"
+                disabled
               [value]="item.id"
               readonly
               aria-label="Item ID"
@@ -102,8 +100,8 @@
         </div>
 
         <!-- Delete & Close Buttons -->
-        <div class="d-flex justify-content-end align-items-center mt-4 gap-2">
-          <button type="button" class="btn btn-danger" (click)="confirmDelete = true">
+        <div class="d-flex justify-content-between align-items-center mt-4 gap-2">
+          <button type="button" class="btn btn-danger">
             Delete Item
           </button>
           <button type="button" class="btn btn-secondary" (click)="onCancel()">

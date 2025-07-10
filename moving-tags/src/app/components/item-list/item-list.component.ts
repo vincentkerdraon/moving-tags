@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { EditItemComponent } from '../edit-item/edit-item.component';
 import { Item } from '../../models/data.models';
 import { ItemService } from '../../services/item.service';
 import { InputIdComponent } from '../input-id/input-id.component';
@@ -8,7 +9,7 @@ import { InputIdComponent } from '../input-id/input-id.component';
 @Component({
   selector: 'app-item-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, InputIdComponent],
+  imports: [CommonModule, FormsModule, InputIdComponent, EditItemComponent],
   templateUrl: './item-list.component.html'
 })
 export class ItemListComponent {
@@ -18,12 +19,31 @@ export class ItemListComponent {
   @Output() editItem = new EventEmitter<string>();
   @Output() scanQr = new EventEmitter<void>();
 
+  editingItem: Item | null = null;
+
   constructor(private itemService: ItemService) {
     this.items = this.itemService.items;
   }
 
   onEdit(id: string) {
-    this.editItem.emit(id);
+    const found = this.items.find(item => item.id === id);
+    if (found) {
+      // Use a shallow copy to avoid mutating the list until save
+      this.editingItem = { ...found, itemTags: [...found.itemTags], checklistTags: [...found.checklistTags], photos: [...found.photos] };
+    }
+  }
+
+  onModalSave(edited: Item) {
+    // Update the item in the service
+    const idx = this.items.findIndex(item => item.id === edited.id);
+    if (idx !== -1) {
+      this.items[idx] = { ...edited };
+    }
+    this.editingItem = null;
+  }
+
+  onModalCancel() {
+    this.editingItem = null;
   }
 
   onScanQr() {
