@@ -5,33 +5,33 @@
     Use the search bar to find items by ID or scan a QR code to quickly locate an item.
   </div>
     
-  <app-input-id (submitId)="onInputId($event)" (scanQr)="onScanQr()" class="mb-4"></app-input-id>
+<app-input-id (submitId)="onInputId($event)" (scanQr)="onScanQr()" class="mb-4"></app-input-id>
 
-    <table class="table table-striped table-hover align-middle">
+<table class="table table-striped table-hover align-middle">
     <thead>
         <tr>
-        <th>ID</th>
-        <th>Item Tags</th>
-        <th>Checklist Tags</th>
-        <th></th>
+            <th>ID</th>
+            <th>Item Tags</th>
+            <th>Checklist Tags</th>
+            <th></th>
         </tr>
     </thead>
     <tbody>
         <tr *ngFor="let item of items">
-        <td>{{ item.id }}</td>
-        <td>
-            <span *ngFor="let tag of item.itemTags" class="badge rounded-pill bg-primary me-1">{{ tag }}</span>
-        </td>
-        <td>
-            <span *ngFor="let tag of item.checklistTags" class="badge rounded-pill bg-info text-dark me-1">{{ tag }}</span>
-        </td>
-        <td>
-            <button class="btn btn-sm btn-outline-primary" (click)="onEdit(item.id)">Edit</button>
-        </td>
+            <td>{{ item.id }}</td>
+            <td>
+                <span *ngFor="let tag of item.itemTags" class="badge rounded-pill bg-primary me-1">{{ tag }}</span>
+            </td>
+            <td>
+                <span *ngFor="let tag of item.checklistTags" class="badge rounded-pill bg-info text-dark me-1">{{ tag }}</span>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" (click)="onEdit(item.id)">Edit</button>
+            </td>
         </tr>
-        <tr *ngIf="items.length === 0">
-        <td colspan="4" class="text-center text-muted">No items found.</td>
+        <tr *ngIf="items?.length === 0">
+            <td colspan="4" class="text-center text-muted">No items found.</td>
         </tr>
     </tbody>
-    </table>
+</table>
 </div>
