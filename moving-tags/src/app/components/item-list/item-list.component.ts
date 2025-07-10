@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Item } from '../../models/data.models';
+import { ItemService } from '../../services/item.service';
 import { InputIdComponent } from '../input-id/input-id.component';
 
 @Component({
@@ -11,12 +12,15 @@ import { InputIdComponent } from '../input-id/input-id.component';
   templateUrl: './item-list.component.html'
 })
 export class ItemListComponent {
-  @Input() items: Item[] = [];
+  items: Item[] = [];
+  @Input() searchId = '';
+  @Input() filter = '';
   @Output() editItem = new EventEmitter<string>();
   @Output() scanQr = new EventEmitter<void>();
 
-  searchId = '';
-  filter = '';
+  constructor(private itemService: ItemService) {
+    this.items = this.itemService.items;
+  }
 
   onEdit(id: string) {
     this.editItem.emit(id);

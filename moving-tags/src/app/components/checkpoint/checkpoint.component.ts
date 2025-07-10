@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, Input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ChecklistTag, Item } from '../../models/data.models';
+import { ItemService } from '../../services/item.service';
 import { InputIdComponent } from '../input-id/input-id.component';
 
 @Component({
@@ -11,7 +13,7 @@ import { InputIdComponent } from '../input-id/input-id.component';
   templateUrl: './checkpoint.component.html',
 })
 export class CheckpointComponent {
-  @Input() items: Item[] = [];
+  items: Item[] = [];
   @Input() allTags: ChecklistTag[] = [];
   doneIds: Set<string> = new Set();
   selectedTag: ChecklistTag = '';
@@ -25,8 +27,19 @@ export class CheckpointComponent {
   popupInterval: any;
   popupPreventClose = false;
   popupStart = 0;
+  idParam: string | null = null;
 
-  constructor(private cdr: ChangeDetectorRef) {}
+  constructor(private cdr: ChangeDetectorRef, private route: ActivatedRoute, private router: Router, private itemService: ItemService) {
+    this.items = this.itemService.items;
+    this.route.paramMap.subscribe(params => {
+      this.idParam = params.get('id');
+      if (this.idParam) {
+        this.tagInput = this.idParam;
+        this.selectedTag = this.idParam;
+        this.tagSelected = true;
+      }
+    });
+  }
 
   get tagList(): ChecklistTag[] {
     return Array.from(new Set([...this.allTags, ...this.items.flatMap(i => i.checklistTags)]));
@@ -36,6 +49,8 @@ export class CheckpointComponent {
     this.selectedTag = tag;
     this.tagInput = tag;
     this.tagSelected = !!tag;
+    // Update the URL with the selected tag
+    this.router.navigate(['/checkpoint', tag]);
   }
 
   onTagInputChange(value: string) {

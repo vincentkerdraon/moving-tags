@@ -1,58 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <!-- Add links to Bootstrap CSS and JavaScript files -->
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
-</head>
-<body>
-
-<!-- Bootstrap Navbar with Tabs -->
 <nav class="navbar navbar-expand navbar-dark bg-primary mb-4">
   <div class="container-fluid">
-    <a class="navbar-brand" href="#">Moving Checklist</a>
+    <a class="navbar-brand" routerLink="/items-list">Moving Checklist</a>
     <ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-row gap-2">
       <li class="nav-item">
-        <a class="nav-link" [class.active]="tab === 'list'" href="#" (click)="setTab('list'); $event.preventDefault()">Item List</a>
+        <a class="nav-link" routerLink="/items-list" >Item List</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" [class.active]="tab === 'checkpoint'" href="#" (click)="setTab('checkpoint'); $event.preventDefault()">Checkpoint</a>
+        <a class="nav-link" routerLink="/checkpoint" >Checkpoint</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" [class.active]="tab === 'qrprint'" href="#" (click)="setTab('qrprint'); $event.preventDefault()">Print QR Codes</a>
+        <a class="nav-link" routerLink="/print-qr-code" routerLinkActive="active">Print QR Codes</a>
       </li>
     </ul>
   </div>
 </nav>
 
-<!-- Main Content: Show tab content -->
-<div *ngIf="tab === 'edit'">
-  <app-edit-item
-    [item]="selectedItem"
-    [existingItemTags]="[]"
-    [existingChecklistTags]="[]"
-    (itemCreated)="onItemCreated($event)"
-    (cancelled)="onCancelEdit()"
-  ></app-edit-item>
-</div>
-<div *ngIf="tab === 'list'">
-  <app-item-list
-    [items]="items"
-    (editItem)="openEditPopup($event)"
-    (scanQr)="onScanQr()"
-  ></app-item-list>
-</div>
-<div *ngIf="tab === 'checkpoint'">
-  <app-checkpoint [items]="items" [allTags]="[]" [openEdit]="openEditPopup"></app-checkpoint>
-</div>
-<div *ngIf="tab === 'qrprint'">
-  <app-qr-print></app-qr-print>
-</div>
+
+<main class="container-fluid">
+  <router-outlet></router-outlet>
+</main>
 
 <!-- Edit Item Popup -->
 <div *ngIf="showEditPopup" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
@@ -75,6 +41,3 @@
     </div>
   </div>
 </div>
-
-</body>
-</html>
