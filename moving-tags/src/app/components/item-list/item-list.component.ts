@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { EditItemComponent } from '../edit-item/edit-item.component';
 import { Item } from '../../models/data.models';
 import { ItemService } from '../../services/item.service';
+import { EditItemComponent } from '../edit-item/edit-item.component';
 import { InputIdComponent } from '../input-id/input-id.component';
 
 @Component({

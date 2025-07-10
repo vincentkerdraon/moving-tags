@@ -16,7 +16,7 @@
         <ul class="list-group">
           <li *ngFor="let item of remaining" class="list-group-item d-flex justify-content-between align-items-center">
             <span (click)="onItemClick(item.id)" style="cursor:pointer;">{{ item.id }}</span>
-            <button class="btn btn-sm btn-outline-primary ms-2" (click)="$event.stopPropagation(); openEdit(item.id)">Details</button>
+            <button class="btn btn-sm btn-outline-primary ms-2" (click)="$event.stopPropagation(); openEditModal(item.id)">Details</button>
           </li>
           <li *ngIf="remaining.length === 0" class="list-group-item text-muted">All items done!</li>
         </ul>
@@ -27,7 +27,7 @@
           <li *ngFor="let item of done" class="list-group-item d-flex justify-content-between align-items-center">
             <span (click)="onItemClick(item.id)" style="cursor:pointer;">{{ item.id }}</span>
             <div class="d-flex gap-2">
-              <button class="btn btn-sm btn-outline-primary" (click)="$event.stopPropagation(); openEdit(item.id)">Details</button>
+              <button class="btn btn-sm btn-outline-primary" (click)="$event.stopPropagation(); openEditModal(item.id)">Details</button>
               <button class="btn btn-sm btn-outline-warning" (click)="$event.stopPropagation(); onUndoDone(item)">Undo</button>
             </div>
           </li>
@@ -71,6 +71,41 @@
       </div>
     </div>
     <div *ngIf="popupItem" class="modal-backdrop fade show"></div>
+    <!-- Error popup for not found -->
+    <div *ngIf="popupError" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.3);">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-danger text-white">
+          <div class="modal-header">
+            <h5 class="modal-title">Error</h5>
+          </div>
+          <div class="modal-body text-center">
+            <div class="fs-4">{{ popupError }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="popupError" class="modal-backdrop fade show"></div>
+    <!-- Modal for editing item -->
+    <div class="modal fade show" tabindex="-1" style="display: block; background: rgba(0,0,0,0.3);" *ngIf="editingItem">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Item</h5>
+            <button type="button" class="btn-close" aria-label="Close" (click)="onModalCancel()"></button>
+          </div>
+          <div class="modal-body">
+            <app-edit-item
+              [item]="editingItem"
+              [existingItemTags]="[]"
+              [existingChecklistTags]="[]"
+              (itemCreated)="onModalSave($event)"
+              (cancelled)="onModalCancel()"
+            ></app-edit-item>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="editingItem" class="modal-backdrop fade show"></div>
   </ng-container>
   <ng-template #selectTagBlock>
     <div class="mb-3">

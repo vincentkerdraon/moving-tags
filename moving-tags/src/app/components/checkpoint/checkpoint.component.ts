@@ -4,12 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ChecklistTag, Item } from '../../models/data.models';
 import { ItemService } from '../../services/item.service';
+import { EditItemComponent } from '../edit-item/edit-item.component';
 import { InputIdComponent } from '../input-id/input-id.component';
 
 @Component({
   selector: 'app-checkpoint',
   standalone: true,
-  imports: [CommonModule, FormsModule, InputIdComponent],
+  imports: [CommonModule, FormsModule, InputIdComponent, EditItemComponent],
   templateUrl: './checkpoint.component.html',
 })
 export class CheckpointComponent {
@@ -28,8 +29,15 @@ export class CheckpointComponent {
   popupPreventClose = false;
   popupStart = 0;
   idParam: string | null = null;
+  editingItem: Item | null = null;
+  popupError: string | null = null;
 
-  constructor(private cdr: ChangeDetectorRef, private route: ActivatedRoute, private router: Router, private itemService: ItemService) {
+  constructor(
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute,
+    private router: Router,
+    private itemService: ItemService
+  ) {
     this.items = this.itemService.items;
     this.route.paramMap.subscribe(params => {
       this.idParam = params.get('id');
@@ -59,44 +67,44 @@ export class CheckpointComponent {
     this.tagSelected = false;
   }
 
-  showPopup(item: Item) {
+  showPopup(item: Item | null) {
+    if (!item) {
+      this.popupItem = null;
+      this.popupError = 'Item not found.';
+      setTimeout(() => {
+        this.popupError = null;
+        this.cdr.detectChanges();
+      }, 2000);
+      this.cdr.detectChanges();
+      return;
+    }
+    this.popupError = null;
     this.popupItem = item;
     this.popupPreventClose = false;
     this.popupProgress = 100;
     clearTimeout(this.popupTimeout);
-    clearInterval(this.popupInterval);
+    if (this.popupInterval) clearInterval(this.popupInterval);
     this.popupStart = Date.now();
     const duration = 2500;
     this.popupInterval = setInterval(() => {
-      if (this.popupPreventClose) {
-        clearInterval(this.popupInterval);
-        return;
-      }
-      if (this.popupItem) {
-        const elapsed = Date.now() - this.popupStart;
-        this.popupProgress = Math.max(0, 100 - Math.round((elapsed / duration) * 100));
-        this.cdr.detectChanges();
-        if (elapsed >= duration) {
-          this.popupProgress = 0;
-          this.popupItem = null;
-          clearInterval(this.popupInterval);
-          this.cdr.detectChanges();
-        }
-      }
-    }, 40);
-    this.popupTimeout = setTimeout(() => {
-      if (!this.popupPreventClose) {
+      if (!this.popupItem || this.popupPreventClose) return;
+      const elapsed = Date.now() - this.popupStart;
+      this.popupProgress = Math.max(0, 100 - (elapsed / duration) * 100);
+      this.cdr.detectChanges();
+      if (this.popupProgress <= 0) {
+        this.popupProgress = 0;
         this.popupItem = null;
         clearInterval(this.popupInterval);
         this.cdr.detectChanges();
       }
-    }, duration);
+    }, 200);
   }
 
   preventPopupClose() {
     this.popupPreventClose = true;
     clearTimeout(this.popupTimeout);
-    clearInterval(this.popupInterval);
+    this.popupProgress=0
+    this.popupInterval=null;
     this.cdr.detectChanges();
   }
 
@@ -104,7 +112,8 @@ export class CheckpointComponent {
     this.popupItem = null;
     this.popupProgress = 100;
     clearTimeout(this.popupTimeout);
-    clearInterval(this.popupInterval);
+    this.popupProgress=0
+    this.popupInterval=null;
     this.cdr.detectChanges();
   }
 
@@ -114,7 +123,7 @@ export class CheckpointComponent {
     if (item && !item.checklistTags.includes(this.selectedTag)) {
       item.checklistTags.push(this.selectedTag);
     }
-    if (item) this.showPopup(item);
+    this.showPopup(item || null);
   }
 
   onScanQr() {}
@@ -138,7 +147,25 @@ export class CheckpointComponent {
     const idx = item.checklistTags.indexOf(this.selectedTag);
     if (idx >= 0) {
       item.checklistTags.splice(idx, 1);
-      this.cdr.detectChanges();
     }
+  }
+
+  openEditModal(id: string) {
+    const found = this.items.find(item => item.id === id);
+    if (found) {
+      this.editingItem = { ...found, itemTags: [...found.itemTags], checklistTags: [...found.checklistTags], photos: [...found.photos] };
+    }
+  }
+
+  onModalSave(edited: Item) {
+    const idx = this.items.findIndex(item => item.id === edited.id);
+    if (idx !== -1) {
+      this.items[idx] = { ...edited };
+    }
+    this.editingItem = null;
+  }
+
+  onModalCancel() {
+    this.editingItem = null;
   }
 }
