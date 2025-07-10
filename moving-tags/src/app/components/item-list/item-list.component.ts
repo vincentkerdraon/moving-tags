@@ -16,6 +16,7 @@ export class ItemListComponent {
   @Output() scanQr = new EventEmitter<void>();
 
   searchId = '';
+  filter = '';
 
   onEdit(id: string) {
     this.editItem.emit(id);
@@ -33,5 +34,15 @@ export class ItemListComponent {
 
   onInputId(id: string) {
     this.editItem.emit(id);
+  }
+
+  get filteredItems() {
+    const q = this.filter.trim().toLowerCase();
+    if (!q) return this.items;
+    return this.items.filter(item =>
+      item.id.toLowerCase().includes(q) ||
+      item.itemTags.some(tag => tag.toLowerCase().includes(q)) ||
+      item.checklistTags.some(tag => tag.toLowerCase().includes(q))
+    );
   }
 }

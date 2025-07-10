@@ -34,7 +34,7 @@ export class App implements OnInit {
         }
       }
       this.items.push({
-        id: `item-${i.toString().padStart(2, '0')}`,
+        id: `${i.toString().padStart(3, '0')}`,
         itemTags: tags,
         checklistTags: [checkpointTag],
         photos: []

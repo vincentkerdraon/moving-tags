@@ -1,36 +1,33 @@
 <div class="container mt-4">
   <h1 class="mb-4">Item List</h1>
-  
-  <div class="alert alert-info" role="alert">
-    Use the search bar to find items by ID or scan a QR code to quickly locate an item.
-  </div>
+
     
-<app-input-id (submitId)="onInputId($event)" (scanQr)="onScanQr()" class="mb-4"></app-input-id>
+<div class="mb-4">
+  <app-input-id (submitId)="onInputId($event)" (scanQr)="onScanQr()"></app-input-id>
+</div>
+<div class="mb-3">
+  <input type="text" class="form-control" placeholder="Filter by ID, Item Tag, or Checklist Tag" [(ngModel)]="filter">
+</div>
 
 <table class="table table-striped table-hover align-middle">
     <thead>
         <tr>
             <th>ID</th>
-            <th>Item Tags</th>
-            <th>Checklist Tags</th>
+            <th>Tags</th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-        <tr *ngFor="let item of items">
+        <tr *ngFor="let item of filteredItems" (click)="onEdit(item.id)" style="cursor:pointer;">
             <td>{{ item.id }}</td>
             <td>
                 <span *ngFor="let tag of item.itemTags" class="badge rounded-pill bg-primary me-1">{{ tag }}</span>
-            </td>
-            <td>
                 <span *ngFor="let tag of item.checklistTags" class="badge rounded-pill bg-info text-dark me-1">{{ tag }}</span>
             </td>
-            <td>
-                <button class="btn btn-sm btn-outline-primary" (click)="onEdit(item.id)">Edit</button>
-            </td>
+            <td></td>
         </tr>
-        <tr *ngIf="items?.length === 0">
-            <td colspan="4" class="text-center text-muted">No items found.</td>
+        <tr *ngIf="filteredItems?.length === 0">
+            <td colspan="3" class="text-center text-muted">No items found.</td>
         </tr>
     </tbody>
 </table>
