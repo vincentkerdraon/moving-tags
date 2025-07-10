@@ -28,6 +28,7 @@ export class CreateItemComponent implements OnInit {
   newChecklistTag = '';
   itemTagSuggestions: ItemTag[] = [];
   checklistTagSuggestions: ChecklistTag[] = [];
+  confirmDelete = false;
 
   ngOnInit() {
     // Generate a default ID if none provided
@@ -117,6 +118,27 @@ export class CreateItemComponent implements OnInit {
 
   onCancel() {
     this.cancelled.emit();
+  }
+
+  onPhotoInput(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (!input.files) return;
+    const files = Array.from(input.files);
+    for (const file of files) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.item.photos.push({ data: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+    input.value = '';
+  }
+
+  onDeleteItem() {
+    // Clear the item and close the modal
+    this.item = { id: '', itemTags: [], checklistTags: [], photos: [] };
+    this.confirmDelete = false;
+    // Optionally emit a delete event or handle as needed
   }
 
   private generateId(): string {
