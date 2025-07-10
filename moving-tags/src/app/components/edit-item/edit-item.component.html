@@ -1,5 +1,5 @@
 <div class="container py-4">
-  <form>
+  <form (ngSubmit)="save()">
     <!-- 1. QR Code or Manual ID -->
     <div class="mb-4">
       <div class="input-group">
@@ -39,8 +39,8 @@
           <button type="button" class="btn-close btn-close-white ms-2" aria-label="Remove" (click)="removeItemTag(tag)"></button>
         </span>
       </div>
-       <div *ngIf="itemTagSuggestions.length > 0" class="mt-2">
-        <small class="text-muted">Suggestions:</small>
+       <div *ngIf="itemTagSuggestions.length > 0" class="mb-2 ">
+        <small class="text-muted">Suggestions: </small>
         <span *ngFor="let suggestion of itemTagSuggestions" class="badge rounded-pill bg-secondary me-2 pointer" style="cursor:pointer;" (click)="addSuggestedItemTag(suggestion)">
           {{ suggestion }}
         </span>
@@ -73,8 +73,8 @@
           <button type="button" class="btn-close ms-2" aria-label="Remove" (click)="removeChecklistTag(tag)"></button>
         </span>
       </div>
-       <div *ngIf="checklistTagSuggestions.length > 0" class="mt-2">
-        <small class="text-muted">Suggestions:</small>
+       <div *ngIf="checklistTagSuggestions.length > 0" class="mb-2">
+        <small class="text-muted">Suggestions: </small>
         <span *ngFor="let suggestion of checklistTagSuggestions" class="badge rounded-pill bg-secondary me-2 pointer" style="cursor:pointer;" (click)="addSuggestedChecklistTag(suggestion)">
           {{ suggestion }}
         </span>
@@ -106,14 +106,18 @@
         <img *ngFor="let photo of item.photos" [src]="photo.data" class="img-thumbnail" style="max-width: 100px; max-height: 100px;" alt="Item photo">
       </div>
     </div>
-    <!-- Delete & Close Buttons -->
+    <!-- Delete, Save & Close Buttons -->
     <div class="d-flex justify-content-between align-items-center mt-4 gap-2">
       <button type="button" class="btn btn-danger" (click)="confirmDelete = true">
         Delete Item
       </button>
-      <button type="button" class="btn btn-secondary" (click)="onCancel()">
-        Close
-      </button>
+              <button type="button" class="btn btn-secondary" (click)="onCancel()">
+          Cancel
+        </button>
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Save</button>
+
+      </div>
     </div>
   </form>
   <!-- Delete Confirmation Modal -->

@@ -48,7 +48,7 @@ export class EditItemComponent implements OnInit, OnChanges {
     }
   }
 
-  private upsertItem() {
+  save() {
     if (this.item && this.item.id) {
       this.itemCreated.emit({ ...this.item } as Item);
     }
@@ -59,7 +59,6 @@ export class EditItemComponent implements OnInit, OnChanges {
       this.item.itemTags.push(this.newItemTag.trim());
       this.newItemTag = '';
       this.itemTagSuggestions = [];
-      this.upsertItem();
     }
   }
 
@@ -68,21 +67,18 @@ export class EditItemComponent implements OnInit, OnChanges {
       this.item.checklistTags.push(this.newChecklistTag.trim());
       this.newChecklistTag = '';
       this.checklistTagSuggestions = [];
-      this.upsertItem();
     }
   }
 
   removeItemTag(tag: ItemTag) {
     if (this.item) {
       this.item.itemTags = this.item.itemTags.filter(t => t !== tag);
-      this.upsertItem();
     }
   }
 
   removeChecklistTag(tag: ChecklistTag) {
     if (this.item) {
       this.item.checklistTags = this.item.checklistTags.filter(t => t !== tag);
-      this.upsertItem();
     }
   }
 
@@ -104,7 +100,6 @@ export class EditItemComponent implements OnInit, OnChanges {
   addSuggestedItemTag(tag: ItemTag) {
     if (this.item && !this.item.itemTags.includes(tag)) {
       this.item.itemTags.push(tag);
-      this.upsertItem();
     }
     this.newItemTag = '';
     this.itemTagSuggestions = [];
@@ -127,7 +122,6 @@ export class EditItemComponent implements OnInit, OnChanges {
   addSuggestedChecklistTag(tag: ChecklistTag) {
     if (this.item && !this.item.checklistTags.includes(tag)) {
       this.item.checklistTags.push(tag);
-      this.upsertItem();
     }
     this.newChecklistTag = '';
     this.checklistTagSuggestions = [];
@@ -143,9 +137,6 @@ export class EditItemComponent implements OnInit, OnChanges {
       reader.onload = () => {
         this.item!.photos.push({ data: reader.result as string });
         loaded++;
-        if (loaded === files.length) {
-          this.upsertItem();
-        }
       };
       reader.readAsDataURL(file);
     }
