@@ -17,12 +17,7 @@ export class EditItemComponent implements OnInit {
   @Output() itemCreated = new EventEmitter<Item>();
   @Output() cancelled = new EventEmitter<void>();
 
-  item: Item = {
-    id: '',
-    itemTags: [],
-    checklistTags: [],
-    photos: []
-  };
+  @Input() item!: Item;
 
   newItemTag = '';
   newChecklistTag = '';
@@ -31,23 +26,17 @@ export class EditItemComponent implements OnInit {
   confirmDelete = false;
 
   ngOnInit() {
-    if (!this.item.id) {
-      this.item.id = this.generateId();
-    }
+    this.item = { ...this.item };
   }
 
   private upsertItem() {
-    this.itemCreated.emit({ ...this.item });
-  }
-
-  onScanQR() {
-    this.item.id = this.generateId();
-    this.upsertItem();
-    alert('QR scanning not implemented yet. Generated ID: ' + this.item.id);
+    if (this.item && this.item.id) {
+      this.itemCreated.emit({ ...this.item } as Item);
+    }
   }
 
   addItemTag() {
-    if (this.newItemTag && this.newItemTag.trim() && !this.item.itemTags.includes(this.newItemTag.trim())) {
+    if (this.item && this.newItemTag && this.newItemTag.trim() && !this.item.itemTags.includes(this.newItemTag.trim())) {
       this.item.itemTags.push(this.newItemTag.trim());
       this.newItemTag = '';
       this.itemTagSuggestions = [];
@@ -56,7 +45,7 @@ export class EditItemComponent implements OnInit {
   }
 
   addChecklistTag() {
-    if (this.newChecklistTag && this.newChecklistTag.trim() && !this.item.checklistTags.includes(this.newChecklistTag.trim())) {
+    if (this.item && this.newChecklistTag && this.newChecklistTag.trim() && !this.item.checklistTags.includes(this.newChecklistTag.trim())) {
       this.item.checklistTags.push(this.newChecklistTag.trim());
       this.newChecklistTag = '';
       this.checklistTagSuggestions = [];
@@ -65,17 +54,21 @@ export class EditItemComponent implements OnInit {
   }
 
   removeItemTag(tag: ItemTag) {
-    this.item.itemTags = this.item.itemTags.filter(t => t !== tag);
-    this.upsertItem();
+    if (this.item) {
+      this.item.itemTags = this.item.itemTags.filter(t => t !== tag);
+      this.upsertItem();
+    }
   }
 
   removeChecklistTag(tag: ChecklistTag) {
-    this.item.checklistTags = this.item.checklistTags.filter(t => t !== tag);
-    this.upsertItem();
+    if (this.item) {
+      this.item.checklistTags = this.item.checklistTags.filter(t => t !== tag);
+      this.upsertItem();
+    }
   }
 
   addSuggestedItemTag(tag: ItemTag) {
-    if (!this.item.itemTags.includes(tag)) {
+    if (this.item && !this.item.itemTags.includes(tag)) {
       this.item.itemTags.push(tag);
       this.upsertItem();
     }
@@ -83,7 +76,7 @@ export class EditItemComponent implements OnInit {
   }
 
   addSuggestedChecklistTag(tag: ChecklistTag) {
-    if (!this.item.checklistTags.includes(tag)) {
+    if (this.item && !this.item.checklistTags.includes(tag)) {
       this.item.checklistTags.push(tag);
       this.upsertItem();
     }
@@ -92,11 +85,11 @@ export class EditItemComponent implements OnInit {
 
   onItemTagInput(event: any) {
     const input = event.target.value.toLowerCase();
-    if (input.length > 0) {
+    if (input.length > 0 && this.item) {
       this.itemTagSuggestions = this.existingItemTags
         .filter(tag => 
           tag.toLowerCase().includes(input) && 
-          !this.item.itemTags.includes(tag)
+          !this.item!.itemTags.includes(tag)
         )
         .slice(0, 5);
     } else {
@@ -106,11 +99,11 @@ export class EditItemComponent implements OnInit {
 
   onChecklistTagInput(event: any) {
     const input = event.target.value.toLowerCase();
-    if (input.length > 0) {
+    if (input.length > 0 && this.item) {
       this.checklistTagSuggestions = this.existingChecklistTags
         .filter(tag => 
           tag.toLowerCase().includes(input) && 
-          !this.item.checklistTags.includes(tag)
+          !this.item!.checklistTags.includes(tag)
         )
         .slice(0, 5);
     } else {
@@ -120,13 +113,13 @@ export class EditItemComponent implements OnInit {
 
   onPhotoInput(event: Event) {
     const input = event.target as HTMLInputElement;
-    if (!input.files) return;
+    if (!input.files || !this.item) return;
     const files = Array.from(input.files);
     let loaded = 0;
     for (const file of files) {
       const reader = new FileReader();
       reader.onload = () => {
-        this.item.photos.push({ data: reader.result as string });
+        this.item!.photos.push({ data: reader.result as string });
         loaded++;
         if (loaded === files.length) {
           this.upsertItem();

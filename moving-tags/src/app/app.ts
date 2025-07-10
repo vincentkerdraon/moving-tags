@@ -52,4 +52,19 @@ export class App {
     this.tab = 'list';
     this.selectedId = null;
   }
+
+  get selectedItem(): Item {
+    if (this.selectedId) {
+      const found = this.items.find(i => i.id === this.selectedId);
+      if (found) return { ...found };
+      // If not found, treat as new item with this ID
+      return { id: this.selectedId, itemTags: [], checklistTags: [], photos: [] };
+    }
+    // New item (no ID yet)
+    return { id: this.generateId(), itemTags: [], checklistTags: [], photos: [] };
+  }
+
+  private generateId(): string {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
 }
