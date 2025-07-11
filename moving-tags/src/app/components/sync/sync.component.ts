@@ -1,21 +1,38 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { ImageService } from '../../services/image.service';
 import { ItemService } from '../../services/item.service';
 import { SyncService } from '../../services/sync.service';
+import { WebRTCService } from '../../services/webrtc.service';
+import { WebrtcQrCodeComponent } from '../webrtc-qr-code/webrtc-qr-code.component';
 
 @Component({
   selector: 'app-sync',
   templateUrl: './sync.component.html',
   standalone: true,
-  imports: [CommonModule, DatePipe]
+  imports: [CommonModule, DatePipe,  WebrtcQrCodeComponent]
 })
-export class SyncComponent {
+export class SyncComponent { 
   constructor(
     public syncService: SyncService,
     public itemService: ItemService,
-    public imageService: ImageService
+    public imageService: ImageService,
+    public webrtc: WebRTCService,
+    private cdr: ChangeDetectorRef
   ) {}
+
+  onShowConnect() {
+    this.syncService.showConnect = !this.syncService.showConnect;
+    if (this.syncService.showConnect && !this.syncService.connectionStarted) {
+      this.syncService.startConnection(() => this.cdr.detectChanges());
+    }
+  }
+
+  copyRawOffer() {
+    if (this.syncService.rawOffer) {
+      navigator.clipboard.writeText(this.syncService.rawOffer);
+    }
+  }
 
   get allClients(): string[] {
     const clients = new Set([

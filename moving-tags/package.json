@@ -30,6 +30,7 @@
     "bootstrap": "^5.3.7",
     "browser-image-compression": "^2.0.2",
     "exif-js": "^2.3.0",
+    "lz-string": "^1.5.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

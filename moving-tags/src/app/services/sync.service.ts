@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { compressToEncodedURIComponent } from 'lz-string';
+import { WebRTCService } from './webrtc.service';
 
 export type SyncClientId = string;
 
@@ -11,7 +13,16 @@ export class SyncService {
   public clientId: SyncClientId;
   public lastSync: Record<SyncClientId, Date> = {};
 
-  constructor() {
+  // --- SyncComponent stateful data ---
+  public showConnect = false;
+  public connectionStarted = false;
+  public connectionStatus = 'Not connected';
+  public rawOffer: string | null = null;
+  public qrData: string | null = null;
+
+  constructor(
+    public webrtc: WebRTCService
+  ) {
     const storedClientId = localStorage.getItem(SyncService.CLIENT_ID_KEY);
     if (storedClientId) {
       this.clientId = storedClientId;
@@ -28,6 +39,30 @@ export class SyncService {
         }
       } catch {}
     }
+  }
+
+  startConnection(afterUpdate?: () => void) {
+    this.connectionStarted = true;
+    this.connectionStatus = 'Generating offer...';
+    console.log('[SyncService] Starting WebRTC connection as initiator');
+    this.webrtc.createPeerConnection((candidate) => {
+      console.log('[SyncService] ICE candidate:', candidate);
+    }, true);
+    this.webrtc.createDataChannel();
+    this.webrtc.createOffer().then(() => {
+      const raw = JSON.stringify(this.webrtc.getSignalingData(), null, 2);
+      this.rawOffer = raw;
+      this.qrData = compressToEncodedURIComponent(raw);
+      this.connectionStatus = 'Waiting for answer...';
+      console.log('[SyncService] Offer created, QR data:', raw);
+      console.log('[SyncService] QR code generated');
+      if (afterUpdate) afterUpdate();
+    });
+    this.webrtc.onMessage(msg => {
+      this.connectionStatus = 'Connected!';
+      console.log('[SyncService] Data channel message:', msg);
+      if (afterUpdate) afterUpdate();
+    });
   }
 
   private generateClientId(): SyncClientId {
