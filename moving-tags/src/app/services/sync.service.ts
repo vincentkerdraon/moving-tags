@@ -45,23 +45,50 @@ export class SyncService {
     this.connectionStarted = true;
     this.connectionStatus = 'Generating offer...';
     console.log('[SyncService] Starting WebRTC connection as initiator');
+    
+    let iceCandidatesComplete = false;
+    
     this.webrtc.createPeerConnection((candidate) => {
       console.log('[SyncService] ICE candidate:', candidate);
+      // Generate QR code after getting some ICE candidates
+      if (!iceCandidatesComplete) {
+        setTimeout(() => {
+          const raw = JSON.stringify(this.webrtc.getSignalingData(), null, 2);
+          this.rawOffer = raw;
+          this.qrData = compressToEncodedURIComponent(raw);
+          this.connectionStatus = 'Waiting for answer...';
+          console.log('[SyncService] Updated QR data with ICE candidates:', raw);
+          if (afterUpdate) afterUpdate();
+        }, 100); // Small delay to allow multiple candidates
+      }
     }, true);
-    this.webrtc.createDataChannel();
-    this.webrtc.createOffer().then(() => {
-      const raw = JSON.stringify(this.webrtc.getSignalingData(), null, 2);
-      this.rawOffer = raw;
-      this.qrData = compressToEncodedURIComponent(raw);
-      this.connectionStatus = 'Waiting for answer...';
-      console.log('[SyncService] Offer created, QR data:', raw);
-      console.log('[SyncService] QR code generated');
+    
+    // Always set the onMessage handler immediately after creating the data channel
+    const dataChannel = this.webrtc.createDataChannel();
+    this.webrtc.setupDataChannel(dataChannel, () => {
+      this.connectionStatus = 'Connected!';
       if (afterUpdate) afterUpdate();
     });
     this.webrtc.onMessage(msg => {
-      this.connectionStatus = 'Connected!';
+      // Only log message, connectionStatus is now set on open
       console.log('[SyncService] Data channel message:', msg);
       if (afterUpdate) afterUpdate();
+    });
+    this.webrtc.createOffer().then(() => {
+      console.log('[SyncService] Offer created, waiting for ICE candidates...');
+      
+      // Set a timeout to generate QR code even if no ICE candidates come
+      setTimeout(() => {
+        if (!this.qrData) {
+          const raw = JSON.stringify(this.webrtc.getSignalingData(), null, 2);
+          this.rawOffer = raw;
+          this.qrData = compressToEncodedURIComponent(raw);
+          this.connectionStatus = 'Waiting for answer...';
+          console.log('[SyncService] QR code generated (timeout), QR data:', raw);
+          if (afterUpdate) afterUpdate();
+        }
+        iceCandidatesComplete = true;
+      }, 3000); // Wait up to 3 seconds for ICE candidates
     });
   }
 

@@ -1,14 +1,28 @@
 <div class="print-container container py-4">
   <div class="alert alert-info d-print-none mb-4">
-    This page lets you generate and print sheets of QR codes for your moving checklist. Enter or randomize 2-character IDs, then print for use on boxes or items.
+    This page lets you generate and print sheets of QR codes for your moving
+    checklist. Enter or randomize 2-character IDs, then print for use on boxes
+    or items.
   </div>
 
-      <app-qr-code-display [id]="'A1'"></app-qr-code-display>
-
-  <div class="mb-4 d-flex align-items-center gap-2  d-print-none">
-    <label for="idsInput" class="form-label mb-0">IDs to print (semicolon separated)</label>
-    <input id="idsInput" type="text" class="form-control w-auto"  [(ngModel)]="idsInput" placeholder="A2; 1B; C3">
-    <button type="button" class="btn btn-outline-secondary" (click)="randomizeIds()">Random</button>
+  <div class="mb-4 d-flex align-items-center gap-2 d-print-none">
+    <label for="idsInput" class="form-label mb-0"
+      >IDs to print (semicolon separated)</label
+    >
+    <input
+      id="idsInput"
+      type="text"
+      class="form-control w-auto"
+      [(ngModel)]="idsInput"
+      placeholder="A2; 1B; C3"
+    />
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      (click)="randomizeIds()"
+    >
+      Random
+    </button>
   </div>
   <div *ngFor="let id of parsedIds" class="row mb-4">
     <div class="col-2" *ngFor="let col of cols">

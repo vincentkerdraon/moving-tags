@@ -11,7 +11,7 @@
             "version": "latest"
         }
     },
-    "postCreateCommand": "npm install -g @angular/cli && npm install",
+    "postCreateCommand": "cd moving-tags && npm install -g @angular/cli && npm install",
     "customizations": {
         "vscode": {
             "settings": {
@@ -32,8 +32,10 @@
             ]
         }
     },
-    "forwardPorts": [
-        4200
+    //use network=host to allow connection from phone. else only host can access.
+    // "forwardPorts": [4200 ],
+    "runArgs": [
+        "--network=host"
     ],
     "portsAttributes": {
         "4200": {
