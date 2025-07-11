@@ -17,10 +17,9 @@ env:
   OWNER: ${{ github.repository_owner }}
 
 jobs:
-  build_ssr:
+  build:
     name: Build and Push Angular App Image
     runs-on: ubuntu-latest
-    needs: build_signaling
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
