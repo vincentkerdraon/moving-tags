@@ -13,6 +13,8 @@ import { WebrtcQrCodeComponent } from '../webrtc-qr-code/webrtc-qr-code.componen
   imports: [CommonModule, DatePipe,  WebrtcQrCodeComponent]
 })
 export class SyncComponent { 
+  mode: 'default' | 'server' | 'client' = 'default';
+
   constructor(
     public syncService: SyncService,
     public itemService: ItemService,
@@ -20,6 +22,26 @@ export class SyncComponent {
     public webrtc: WebRTCService,
     private cdr: ChangeDetectorRef
   ) {}
+
+  startServer() {
+    this.mode = 'server';
+    this.syncService.showConnect = true;
+    if (!this.syncService.connectionStarted) {
+      this.syncService.startConnection(() => this.cdr.detectChanges());
+    }
+  }
+
+  connectToServer() {
+    this.mode = 'client';
+    this.syncService.showConnect = true;
+    // Placeholder: implement QR scan logic here
+  }
+
+  cancelSync() {
+    this.mode = 'default';
+    this.syncService.showConnect = false;
+    // Optionally reset other syncService state if needed
+  }
 
   onShowConnect() {
     this.syncService.showConnect = !this.syncService.showConnect;
