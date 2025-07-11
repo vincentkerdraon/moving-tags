@@ -3,13 +3,14 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Item } from '../../models/data.models';
 import { ItemService } from '../../services/item.service';
+import { DestinationTagComponent } from '../destination-tag/destination-tag.component';
 import { EditItemComponent } from '../edit-item/edit-item.component';
 import { InputIdComponent } from '../input-id/input-id.component';
 
 @Component({
   selector: 'app-item-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, InputIdComponent, EditItemComponent],
+  imports: [CommonModule, FormsModule, InputIdComponent, EditItemComponent, DestinationTagComponent],
   templateUrl: './item-list.component.html'
 })
 export class ItemListComponent {

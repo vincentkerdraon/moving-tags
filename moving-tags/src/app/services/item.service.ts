@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ChecklistTag, ClientId, Item, ItemAction, ItemDelta, ItemTag } from '../models/data.models';
+import { ChecklistTag, ClientId, DestinationTag, Item, ItemAction, ItemDelta, ItemTag } from '../models/data.models';
 
 function generateClientId(): ClientId {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -110,6 +110,7 @@ export class ItemService {
     if (this._items.length > 0) return;
     const checkpointTag = 'ready for movers';
     const itemTags = ['kitchen', 'fragile', 'books', 'clothes', 'electronics', 'bathroom', 'toys', 'office', 'decor', 'misc'];
+    const destinations = Object.values(DestinationTag);
     for (let i = 1; i <= 20; i++) {
       const tags = [itemTags[Math.floor(Math.random() * itemTags.length)]];
       if (i % 4 === 0) {
@@ -122,12 +123,16 @@ export class ItemService {
       // Randomly assign a weight to some items
       const hasWeight = Math.random() < 0.6; // 60% chance to have a weight
       const weight = hasWeight ? +(Math.random() * 30 + 1).toFixed(1) : undefined;
+      // Randomly assign a destination to some items
+      const hasDestination = Math.random() < 0.6; // 60% chance to have a destination
+      const destination = hasDestination ? destinations[Math.floor(Math.random() * destinations.length)] : undefined;
       this.save({
         id: `${i.toString().padStart(3, '0')}`,
         itemTags: tags,
         checklistTags: [checkpointTag],
         photos: [],
-        ...(weight !== undefined ? { weight } : {})
+        ...(weight !== undefined ? { weight } : {}),
+        ...(destination !== undefined ? { destination } : {})
       });
     }
   }

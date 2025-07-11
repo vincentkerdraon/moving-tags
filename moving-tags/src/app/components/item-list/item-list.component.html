@@ -23,6 +23,7 @@
         <td>
           <span *ngFor="let tag of item.itemTags" class="badge rounded-pill bg-primary me-1">{{ tag }}</span>
           <span *ngFor="let tag of item.checklistTags" class="badge rounded-pill bg-info text-dark me-1">{{ tag }}</span>
+          <app-destination-tag [destination]="item.destination"></app-destination-tag>
         </td>
         <td>
           <span *ngIf="item.weight !== undefined && item.weight !== null" class="text-muted">{{ item.weight }} kg</span>
@@ -30,7 +31,7 @@
         <td></td>
       </tr>
       <tr *ngIf="filteredItems?.length === 0">
-        <td colspan="4" class="text-center text-muted">No items found.</td>
+        <td colspan="5" class="text-center text-muted">No items found.</td>
       </tr>
     </tbody>
   </table>
