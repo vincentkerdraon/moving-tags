@@ -55,4 +55,12 @@ export class ImageService {
       reader.readAsDataURL(compressedFile);
     });
   }
+
+  /**
+   * Reset the photo service, clearing all photos and removing them from localStorage.
+   */
+  reset() {
+    this._photos = [];
+    localStorage.removeItem(ImageService.STORAGE_KEY);
+  }
 }

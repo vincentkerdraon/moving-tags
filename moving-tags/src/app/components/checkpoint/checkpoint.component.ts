@@ -8,12 +8,11 @@ import { ChecklistTagComponent } from '../checklist-tag/checklist-tag.component'
 import { CheckpointValidationComponent } from '../checkpoint-validation/checkpoint-validation.component';
 import { EditItemComponent } from '../edit-item/edit-item.component';
 import { InputIdComponent } from '../input-id/input-id.component';
-import { ItemTagComponent } from '../item-tag/item-tag.component';
 
 @Component({
   selector: 'app-checkpoint',
   standalone: true,
-  imports: [CommonModule, FormsModule, InputIdComponent, EditItemComponent, CheckpointValidationComponent, ChecklistTagComponent, ItemTagComponent],
+  imports: [CommonModule, FormsModule, InputIdComponent, EditItemComponent, CheckpointValidationComponent, ChecklistTagComponent, ],
   templateUrl: './checkpoint.component.html',
 })
 export class CheckpointComponent {

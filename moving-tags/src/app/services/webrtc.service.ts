@@ -182,7 +182,7 @@ export class WebRTCService {
       console.error('[WebRTCService] Data channel error:', e);
     };
     channel.onmessage = (event) => {
-      console.log('[WebRTCService] Data channel message received:', event.data);
+      console.log('[WebRTCService] Data channel message received:',channel.label, event.data);
       if (this.onMessageCallback) this.onMessageCallback(event.data);
     };
   }
@@ -210,6 +210,18 @@ export class WebRTCService {
     this.lastCandidates = [];
     this.reconnectTimeout && clearTimeout(this.reconnectTimeout);
     this.reconnectTimeout = null;
+  }
+
+  reset() {
+    this.close();
+    // All stateful fields
+    this.onMessageCallback = null;
+    this.reconnectTimeout && clearTimeout(this.reconnectTimeout);
+    this.reconnectTimeout = null;
+    this.lastOffer = null;
+    this.lastAnswer = null;
+    this.lastCandidates = [];
+    this.isInitiator = false;
   }
 
   getConnectionState() {

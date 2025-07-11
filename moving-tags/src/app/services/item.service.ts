@@ -166,4 +166,13 @@ export class ItemService {
       });
     }
   }
+
+  reset() {
+    this._items = [];
+    this._itemDeltas = [];
+    this.allItemTags.clear();
+    this.allChecklistTags.clear();
+    localStorage.removeItem(ItemService.STORAGE_KEY);
+    localStorage.removeItem(ItemService.DELTAS_KEY);
+  }
 }
