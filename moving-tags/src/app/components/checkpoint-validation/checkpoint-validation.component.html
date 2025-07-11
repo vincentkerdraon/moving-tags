@@ -1,4 +1,9 @@
-<div *ngIf="popupItem" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.3);">
+<div
+  *ngIf="popupItem"
+  class="modal fade show d-block"
+  tabindex="-1"
+  style="background: rgba(0, 0, 0, 0.3)"
+>
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
@@ -6,34 +11,74 @@
       </div>
       <div class="modal-body">
         <div class="mb-2">
-          <span *ngFor="let tag of popupItem.itemTags" class="badge rounded-pill bg-primary me-1">{{ tag }}</span>
-          <span *ngFor="let tag of popupItem.checklistTags" class="badge rounded-pill bg-info text-dark me-1">{{ tag }}</span>
+          <span
+            *ngFor="let tag of popupItem.itemTags"
+            class="badge rounded-pill bg-primary me-1 fs-6"
+            >{{ tag }}</span
+          >
         </div>
         <div class="mb-2">
-          <span *ngIf="popupItem.weight !== undefined">Weight: <b>{{ popupItem.weight }} kg</b></span>
-          <span *ngIf="popupItem.destination" class="ms-3">Destination: <b>{{ popupItem.destination }}</b></span>
+          <span *ngIf="popupItem.weight !== undefined"
+            >Weight: <b>{{ popupItem.weight }} kg</b></span
+          >
+          <span *ngIf="popupItem.destination" class="ms-3"
+            >Destination: <b>{{ popupItem.destination }}</b></span
+          >
         </div>
         <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-2 mb-3">
           <ng-container *ngFor="let photoId of popupItem.photos">
             <div class="col d-flex flex-column align-items-center">
               <div class="mb-2 w-100">
-                <img [src]="imageService.getPhotoData(photoId)" class="img-thumbnail w-100" style="height: auto; max-width: 100%; max-height: 300px; object-fit: contain;" alt="Item photo">
+                <img
+                  [src]="imageService.getPhotoData(photoId)"
+                  class="img-thumbnail w-100"
+                  style="
+                    height: auto;
+                    max-width: 100%;
+                    max-height: 300px;
+                    object-fit: contain;
+                  "
+                  alt="Item photo"
+                />
               </div>
             </div>
           </ng-container>
-          <span *ngIf="!popupItem.photos.length" class="text-muted">No photos</span>
+          <span *ngIf="!popupItem.photos.length" class="text-muted"
+            >No photos</span
+          >
         </div>
-        <div class="mb-2 position-relative" style="height: 42px;">
-          <div class="position-absolute top-0 start-0 w-100 h-100" style="z-index:0;">
-            <div class="progress h-100" style="background: transparent;">
-              <div class="progress-bar bg-info" role="progressbar" [style.width.%]="popupProgress" [attr.aria-valuenow]="popupProgress" aria-valuemin="0" aria-valuemax="100" style="opacity:0.3;"></div>
+        <div class="mb-2 position-relative" style="height: 42px">
+          <div
+            class="position-absolute top-0 start-0 w-100 h-100"
+            style="z-index: 0"
+          >
+            <div class="progress h-100" style="background: transparent">
+              <div
+                class="progress-bar bg-info"
+                role="progressbar"
+                [style.width.%]="popupProgress"
+                [attr.aria-valuenow]="popupProgress"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                style="opacity: 0.3"
+              ></div>
             </div>
           </div>
-          <div class="position-relative d-flex gap-2 justify-content-center align-items-center h-100" style="z-index:1;">
-            <button class="btn btn-outline-secondary flex-fill" (click)="keep.emit()" [disabled]="popupPreventClose">
+          <div
+            class="position-relative d-flex gap-2 justify-content-center align-items-center h-100"
+            style="z-index: 1"
+          >
+            <button
+              class="btn btn-outline-secondary flex-fill"
+              (click)="keep.emit()"
+              [disabled]="popupPreventClose"
+            >
               Keep
             </button>
-            <button class="btn btn-outline-danger flex-fill" (click)="close.emit()">
+            <button
+              class="btn btn-outline-danger flex-fill"
+              (click)="close.emit()"
+            >
               Close
             </button>
           </div>

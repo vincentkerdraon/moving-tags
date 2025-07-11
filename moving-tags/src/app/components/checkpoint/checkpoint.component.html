@@ -1,37 +1,82 @@
 <div class="container mt-4">
-  <h2 class="mb-4">Checkpoint</h2>
+  <h2 class="">
+    Checkpoint
+    <app-checklist-tag
+      *ngIf="checkpointId"
+      [tag]="checkpointId"
+      [removable]="false"
+      class="badge rounded-pill bg-info text-dark me-1"
+    ></app-checklist-tag>
+  </h2>
 
   <ng-container *ngIf="checkpointId; else selectTagBlock">
-    <div class="mb-3">
-      <div class="d-flex align-items-center mb-2">
-        <span class="fw-bold">Checkpoint:</span>
-        <span class="ms-2 badge bg-primary">{{ checkpointId }}</span>
-        <button class="btn btn-link ms-3" (click)="checkpointId = ''">Switch to another checkpoint</button>
-      </div>
+    <div class="mb-2">
+      <button class="btn btn-link" (click)="checkpointId = ''">
+        Switch to another checkpoint
+      </button>
     </div>
-    <app-input-id (submitId)="onSubmitId($event)" (scanQr)="onScanQr()"></app-input-id>
+    <div class="alert alert-info mb-4">
+      <strong>What is a Checkpoint?</strong><br />
+      Use this page to mark items as checked at a specific checkpoint or
+      location. Select or create a checkpoint tag above, then scan or enter item
+      IDs as you process them. Items will be tracked as "Remaining" or "Done"
+      for this checkpoint. You can undo or edit any item at any time.
+    </div>
+    <app-input-id
+      (submitId)="onSubmitId($event)"
+      (scanQr)="onScanQr()"
+    ></app-input-id>
     <div class="row mt-4">
       <div class="col-md-6">
         <h5>Remaining Items</h5>
         <ul class="list-group">
-          <li *ngFor="let item of remaining" class="list-group-item d-flex justify-content-between align-items-center">
-            <span (click)="onItemClick(item.id)" style="cursor:pointer;">{{ item.id }}</span>
-            <button class="btn btn-sm btn-outline-primary ms-2" (click)="$event.stopPropagation(); openEditModal(item.id)">Details</button>
+          <li
+            *ngFor="let item of remaining"
+            class="list-group-item d-flex justify-content-between align-items-center"
+          >
+            <span (click)="onItemClick(item.id)" style="cursor: pointer">{{
+              item.id
+            }}</span>
+            <button
+              class="btn btn-sm btn-outline-primary ms-2"
+              (click)="$event.stopPropagation(); openEditModal(item.id)"
+            >
+              Details
+            </button>
           </li>
-          <li *ngIf="remaining.length === 0" class="list-group-item text-muted">All items done!</li>
+          <li *ngIf="remaining.length === 0" class="list-group-item text-muted">
+            All items done!
+          </li>
         </ul>
       </div>
       <div class="col-md-6">
         <h5>Done Items</h5>
         <ul class="list-group">
-          <li *ngFor="let item of done" class="list-group-item d-flex justify-content-between align-items-center">
-            <span (click)="onItemClick(item.id)" style="cursor:pointer;">{{ item.id }}</span>
+          <li
+            *ngFor="let item of done"
+            class="list-group-item d-flex justify-content-between align-items-center"
+          >
+            <span (click)="onItemClick(item.id)" style="cursor: pointer">{{
+              item.id
+            }}</span>
             <div class="d-flex gap-2">
-              <button class="btn btn-sm btn-outline-primary" (click)="$event.stopPropagation(); openEditModal(item.id)">Details</button>
-              <button class="btn btn-sm btn-outline-warning" (click)="$event.stopPropagation(); onUndoDone(item)">Undo</button>
+              <button
+                class="btn btn-sm btn-outline-primary"
+                (click)="$event.stopPropagation(); openEditModal(item.id)"
+              >
+                Details
+              </button>
+              <button
+                class="btn btn-sm btn-outline-warning"
+                (click)="$event.stopPropagation(); onUndoDone(item)"
+              >
+                Undo
+              </button>
             </div>
           </li>
-          <li *ngIf="done.length === 0" class="list-group-item text-muted">No items done yet.</li>
+          <li *ngIf="done.length === 0" class="list-group-item text-muted">
+            No items done yet.
+          </li>
         </ul>
       </div>
     </div>
@@ -45,7 +90,12 @@
       (close)="closePopup()"
     ></app-checkpoint-validation>
     <!-- Error popup for not found -->
-    <div *ngIf="popupError" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.3);">
+    <div
+      *ngIf="popupError"
+      class="modal fade show d-block"
+      tabindex="-1"
+      style="background: rgba(0, 0, 0, 0.3)"
+    >
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content bg-danger text-white">
           <div class="modal-header">
@@ -59,12 +109,22 @@
     </div>
     <div *ngIf="popupError" class="modal-backdrop fade show"></div>
     <!-- Modal for editing item -->
-    <div class="modal fade show" tabindex="-1" style="display: block; background: rgba(0,0,0,0.3);" *ngIf="editingItem">
+    <div
+      class="modal fade show"
+      tabindex="-1"
+      style="display: block; background: rgba(0, 0, 0, 0.3)"
+      *ngIf="editingItem"
+    >
       <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
           <div class="modal-header">
             <h5 class="modal-title">Edit Item</h5>
-            <button type="button" class="btn-close" aria-label="Close" (click)="onModalCancel()"></button>
+            <button
+              type="button"
+              class="btn-close"
+              aria-label="Close"
+              (click)="onModalCancel()"
+            ></button>
           </div>
           <div class="modal-body">
             <app-edit-item
@@ -79,19 +139,39 @@
     <div *ngIf="editingItem" class="modal-backdrop fade show"></div>
   </ng-container>
   <ng-template #selectTagBlock>
+    <div class="alert alert-info">
+      Select or create a checkpoint tag to begin.
+    </div>
     <div class="mb-3">
-      <label for="tagInput" class="form-label">Checkpoint Tag</label>
+      <label for="tagInput" class="form-label">Checkpoint Tag:</label>
       <div class="d-flex align-items-center flex-wrap gap-2 mb-2">
         <ng-container *ngFor="let tag of tagList">
-          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="onSelectTag(tag)">{{ tag }}</button>
+          <app-checklist-tag
+            [tag]="tag"
+            (tagClick)="onSelectTag(tag)"
+            [removable]="false"
+            class="badge rounded-pill bg-info text-dark me-1 fs-6"
+          ></app-checklist-tag>
         </ng-container>
       </div>
-      <input list="tagList" id="tagInput" class="form-control w-auto d-inline-block" style="max-width: 250px;" [(ngModel)]="tagInput" (ngModelChange)="onTagInputChange($event)">
+      <input
+        list="tagList"
+        id="tagInput"
+        class="form-control w-auto d-inline-block"
+        style="max-width: 250px"
+        [(ngModel)]="tagInput"
+        (ngModelChange)="onTagInputChange($event)"
+      />
       <datalist id="tagList">
         <option *ngFor="let tag of tagList" [value]="tag"></option>
       </datalist>
-      <button class="btn btn-primary ms-2" (click)="onSelectTag(tagInput)" [disabled]="!tagInput">Select</button>
+      <button
+        class="btn btn-primary ms-2"
+        (click)="onSelectTag(tagInput)"
+        [disabled]="!tagInput"
+      >
+        Create
+      </button>
     </div>
-    <div class="alert alert-info mt-4">Select or create a checkpoint tag to begin.</div>
   </ng-template>
 </div>

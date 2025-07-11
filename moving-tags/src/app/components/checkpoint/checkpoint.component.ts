@@ -4,14 +4,16 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ChecklistTag, Item } from '../../models/data.models';
 import { ItemService } from '../../services/item.service';
+import { ChecklistTagComponent } from '../checklist-tag/checklist-tag.component';
 import { CheckpointValidationComponent } from '../checkpoint-validation/checkpoint-validation.component';
 import { EditItemComponent } from '../edit-item/edit-item.component';
 import { InputIdComponent } from '../input-id/input-id.component';
+import { ItemTagComponent } from '../item-tag/item-tag.component';
 
 @Component({
   selector: 'app-checkpoint',
   standalone: true,
-  imports: [CommonModule, FormsModule, InputIdComponent, EditItemComponent, CheckpointValidationComponent],
+  imports: [CommonModule, FormsModule, InputIdComponent, EditItemComponent, CheckpointValidationComponent, ChecklistTagComponent, ItemTagComponent],
   templateUrl: './checkpoint.component.html',
 })
 export class CheckpointComponent {
@@ -60,7 +62,7 @@ export class CheckpointComponent {
 
   onTagInputChange(value: string) {
     this.tagInput = value;
-    this.checkpointId = value;
+    // Do not set checkpointId here!
   }
 
   showPopup(item: Item | null) {

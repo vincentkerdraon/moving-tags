@@ -1,37 +1,52 @@
 <nav class="navbar navbar-expand navbar-dark bg-primary mb-4">
   <div class="container-fluid">
-    <a class="navbar-brand" routerLink="/items-list">Moving Checklist</a>
+    <a class="navbar-brand" routerLink="/">Moving Checklist</a>
     <ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-row gap-2">
       <li class="nav-item">
-        <a class="nav-link" routerLink="/items-list" >Item List</a>
+        <a class="nav-link" routerLink="/list">List</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" routerLink="/checkpoint" >Checkpoint</a>
+        <a class="nav-link" routerLink="/checkpoint">Checkpoint</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" routerLink="/print-qr-code" routerLinkActive="active">Print QR Codes</a>
+        <a class="nav-link" routerLink="/print" routerLinkActive="active"
+          >Print</a
+        >
       </li>
       <li class="nav-item">
-        <a class="nav-link" routerLink="/sync" routerLinkActive="active">Sync</a>
+        <a class="nav-link" routerLink="/sync" routerLinkActive="active"
+          >Sync</a
+        >
       </li>
     </ul>
   </div>
 </nav>
 
-
 <main class="container-fluid">
   <router-outlet></router-outlet>
 </main>
 
-<app-error [error]="errorService.error$ | async" (clear)="clearError()"></app-error>
+<app-error
+  [error]="errorService.error$ | async"
+  (clear)="clearError()"
+></app-error>
 
-
-<div *ngIf="showEditPopup" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
+<div
+  *ngIf="showEditPopup"
+  class="modal fade show d-block"
+  tabindex="-1"
+  style="background: rgba(0, 0, 0, 0.5)"
+>
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Edit Item</h5>
-        <button type="button" class="btn-close" aria-label="Close" (click)="closeEditPopup()"></button>
+        <button
+          type="button"
+          class="btn-close"
+          aria-label="Close"
+          (click)="closeEditPopup()"
+        ></button>
       </div>
       <div class="modal-body">
         <app-edit-item
@@ -41,6 +56,6 @@
           (cancelled)="closeEditPopup()"
         ></app-edit-item>
       </div>
-    </div> 
+    </div>
   </div>
 </div>
