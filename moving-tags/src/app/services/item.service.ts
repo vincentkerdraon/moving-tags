@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ChecklistTag, ClientId, DestinationTag, Item, ItemAction, ItemDelta, ItemTag } from '../models/data.models';
 import { ImageService } from './image.service';
+import { SyncService } from './sync.service';
 
 function generateClientId(): ClientId {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -12,13 +13,11 @@ export class ItemService {
   private _itemDeltas: ItemDelta[] = [];
   allItemTags: Set<ItemTag> = new Set();
   allChecklistTags: Set<ChecklistTag> = new Set();
-  readonly clientId: ClientId = generateClientId();
   
   private static readonly STORAGE_KEY = 'items';
   private static readonly DELTAS_KEY = 'itemDeltas';
-  private static readonly CLIENT_ID_KEY = 'clientId';
 
-  constructor(private imageService: ImageService) {
+  constructor(private imageService: ImageService, private syncService: SyncService) {
     const storedItems = localStorage.getItem(ItemService.STORAGE_KEY);
     if (storedItems) {
       try {
@@ -35,18 +34,11 @@ export class ItemService {
         this._itemDeltas = [];
       }
     }
-    const storedClientId = localStorage.getItem(ItemService.CLIENT_ID_KEY);
-    if (storedClientId) {
-      this.clientId = storedClientId as ClientId;
-    } else {
-      localStorage.setItem(ItemService.CLIENT_ID_KEY, this.clientId);
-    }
   }
 
   private persist() {
     localStorage.setItem(ItemService.STORAGE_KEY, JSON.stringify(this._items));
     localStorage.setItem(ItemService.DELTAS_KEY, JSON.stringify(this._itemDeltas));
-    localStorage.setItem(ItemService.CLIENT_ID_KEY, this.clientId);
   }
 
   get items(): Item[] {
@@ -92,7 +84,7 @@ export class ItemService {
       time: now,
       id: item.id,
       action: idx === -1 ? ItemAction.add : ItemAction.update,
-      client:this.clientId,
+      client: this.syncService.clientId,
       ...(itemTagsAdded.length ? { itemTagsAdded } : {}),
       ...(itemTagsRemoved.length ? { itemTagsRemoved } : {}),
       ...(checklistTagsAdded.length ? { checklistTagsAdded } : {}),
@@ -120,7 +112,7 @@ export class ItemService {
         time: now,
         id,
         action: ItemAction.remove,
-        client:this.clientId,
+        client: this.syncService.clientId,
         ...(item.itemTags.length ? { itemTagsRemoved: item.itemTags } : {}),
         ...(item.checklistTags.length ? { checklistTagsRemoved: item.checklistTags } : {}),
         ...(item.photos.length ? { photosRemoved: item.photos } : {}),

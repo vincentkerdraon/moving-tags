@@ -1,0 +1,24 @@
+<div class="container mt-4">
+  <h2>Sync Status</h2>
+  <div class="mb-3">
+    <strong>Your Client ID:</strong> {{ syncService.clientId }}
+  </div>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Last Sync</th>
+        <th>Photos Since Last Sync</th>
+        <th>Item Changes Since Last Sync</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let client of allClients">
+        <td>{{ client === syncService.clientId ? client + ' (You)' : client }}</td>
+        <td>{{ syncService.lastSync[client] ? (syncService.lastSync[client] | date:'short') : 'Never' }}</td>
+        <td>{{ getPhotoCount(client) }}</td>
+        <td>{{ getItemChangeCount(client) }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
