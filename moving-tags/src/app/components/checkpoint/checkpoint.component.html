@@ -1,12 +1,12 @@
 <div class="container mt-4">
   <h2 class="mb-4">Checkpoint</h2>
 
-  <ng-container *ngIf="tagSelected; else selectTagBlock">
+  <ng-container *ngIf="checkpointId; else selectTagBlock">
     <div class="mb-3">
       <div class="d-flex align-items-center mb-2">
         <span class="fw-bold">Checkpoint:</span>
-        <span class="ms-2 badge bg-primary">{{ selectedTag }}</span>
-        <button class="btn btn-link ms-3" (click)="tagSelected = false">Switch to another checkpoint</button>
+        <span class="ms-2 badge bg-primary">{{ checkpointId }}</span>
+        <button class="btn btn-link ms-3" (click)="checkpointId = ''">Switch to another checkpoint</button>
       </div>
     </div>
     <app-input-id (submitId)="onSubmitId($event)" (scanQr)="onScanQr()"></app-input-id>

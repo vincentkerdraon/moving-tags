@@ -15,11 +15,7 @@ import { InputIdComponent } from '../input-id/input-id.component';
   templateUrl: './checkpoint.component.html',
 })
 export class CheckpointComponent {
-  items: Item[] = [];
-  @Input() allTags: ChecklistTag[] = [];
-  doneIds: Set<string> = new Set();
-  selectedTag: ChecklistTag = '';
-  tagInput: string = '';
+  checkpointId: ChecklistTag = '';
   tagSelected = false;
   @Input() openEdit: (id: string) => void = () => {};
 
@@ -32,40 +28,39 @@ export class CheckpointComponent {
   idParam: string | null = null;
   editingItem: Item | null = null;
   popupError: string | null = null;
+  tagInput: string = '';
 
   constructor(
     private cdr: ChangeDetectorRef,
     private route: ActivatedRoute,
     private router: Router,
-    private itemService: ItemService
+    public itemService: ItemService // public for template access
   ) {
-    this.items = this.itemService.items;
     this.route.paramMap.subscribe(params => {
-      this.idParam = params.get('id');
-      if (this.idParam) {
-        this.tagInput = this.idParam;
-        this.selectedTag = this.idParam;
-        this.tagSelected = true;
+      const id = params.get('id');
+      if (id) {
+        this.checkpointId = id;
       }
     });
   }
 
+  get items(): Item[] {
+    return this.itemService.items;
+  }
+
   get tagList(): ChecklistTag[] {
-    return Array.from(new Set([...this.allTags, ...this.items.flatMap(i => i.checklistTags)]));
+    return Array.from(new Set(this.items.flatMap(i => i.checklistTags)));
   }
 
   onSelectTag(tag: string) {
-    this.selectedTag = tag;
+    this.checkpointId = tag;
     this.tagInput = tag;
-    this.tagSelected = !!tag;
-    // Update the URL with the selected tag
     this.router.navigate(['/checkpoint', tag]);
   }
 
   onTagInputChange(value: string) {
     this.tagInput = value;
-    this.selectedTag = value;
-    this.tagSelected = false;
+    this.checkpointId = value;
   }
 
   showPopup(item: Item | null) {
@@ -119,10 +114,17 @@ export class CheckpointComponent {
   }
 
   onSubmitId(id: string) {
-    if (!this.selectedTag) return;
+    if (!this.checkpointId) return;
     const item = this.items.find(i => i.id === id);
-    if (item && !item.checklistTags.includes(this.selectedTag)) {
-      item.checklistTags.push(this.selectedTag);
+    if (item && !item.checklistTags.includes(this.checkpointId)) {
+      const updated = { ...item, checklistTags: [...item.checklistTags, this.checkpointId] };
+      const err = this.itemService.save(updated);
+      if (err) {
+        // TODO: Use global error service if needed
+        this.popupError = err;
+        this.showPopup(null);
+        return;
+      }
     }
     this.showPopup(item || null);
   }
@@ -134,20 +136,27 @@ export class CheckpointComponent {
   }
 
   get remaining() {
-    if (!this.selectedTag) return this.items.slice().sort((a, b) => a.id.localeCompare(b.id));
-    return this.items.filter(item => !item.checklistTags.includes(this.selectedTag)).sort((a, b) => a.id.localeCompare(b.id));
+    if (!this.checkpointId) return this.items.slice().sort((a, b) => a.id.localeCompare(b.id));
+    return this.items.filter(item => !item.checklistTags.includes(this.checkpointId)).sort((a, b) => a.id.localeCompare(b.id));
   }
 
   get done() {
-    if (!this.selectedTag) return [];
-    return this.items.filter(item => item.checklistTags.includes(this.selectedTag)).sort((a, b) => a.id.localeCompare(b.id));
+    if (!this.checkpointId) return [];
+    return this.items.filter(item => item.checklistTags.includes(this.checkpointId)).sort((a, b) => a.id.localeCompare(b.id));
   }
 
   onUndoDone(item: Item) {
-    if (!this.selectedTag) return;
-    const idx = item.checklistTags.indexOf(this.selectedTag);
+    if (!this.checkpointId) return;
+    const idx = item.checklistTags.indexOf(this.checkpointId);
     if (idx >= 0) {
-      item.checklistTags.splice(idx, 1);
+      const updated = { ...item, checklistTags: item.checklistTags.filter(t => t !== this.checkpointId) };
+      const err = this.itemService.save(updated);
+      if (err) {
+        // TODO: Use global error service if needed
+        this.popupError = err;
+        this.showPopup(null);
+        return;
+      }
     }
   }
 
@@ -159,9 +168,12 @@ export class CheckpointComponent {
   }
 
   onModalSave(edited: Item) {
-    const idx = this.items.findIndex(item => item.id === edited.id);
-    if (idx !== -1) {
-      this.items[idx] = { ...edited };
+    const err = this.itemService.save(edited);
+    if (err) {
+      // TODO: Use global error service if needed
+      this.popupError = err;
+      this.showPopup(null);
+      return;
     }
     this.editingItem = null;
   }

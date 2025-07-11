@@ -42,7 +42,6 @@
         <div class="modal-body">
           <app-edit-item
             [item]="editingItem"
-            [items]="items"
             (itemCreated)="onModalSave($event)"
             (cancelled)="onModalCancel()"
           ></app-edit-item>

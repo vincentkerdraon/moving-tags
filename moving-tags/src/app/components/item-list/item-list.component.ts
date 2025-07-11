@@ -13,7 +13,6 @@ import { InputIdComponent } from '../input-id/input-id.component';
   templateUrl: './item-list.component.html'
 })
 export class ItemListComponent {
-  items: Item[] = [];
   @Input() searchId = '';
   @Input() filter = '';
   @Output() editItem = new EventEmitter<string>();
@@ -21,24 +20,21 @@ export class ItemListComponent {
 
   editingItem: Item | null = null;
 
-  constructor(private itemService: ItemService) {
-    this.items = this.itemService.items;
+  constructor(public itemService: ItemService) {}
+
+  get items(): Item[] {
+    return this.itemService.items;
   }
 
   onEdit(id: string) {
     const found = this.items.find(item => item.id === id);
     if (found) {
-      // Use a shallow copy to avoid mutating the list until save
       this.editingItem = { ...found, itemTags: [...found.itemTags], checklistTags: [...found.checklistTags], photos: [...found.photos] };
     }
   }
 
   onModalSave(edited: Item) {
-    // Update the item in the service
-    const idx = this.items.findIndex(item => item.id === edited.id);
-    if (idx !== -1) {
-      this.items[idx] = { ...edited };
-    }
+    this.itemService.save(edited);
     this.editingItem = null;
   }
 

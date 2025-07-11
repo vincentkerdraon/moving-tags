@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ChecklistTag, DestinationTag, Item, ItemTag } from '../../models/data.models';
 import { ErrorService } from '../../services/error.service';
@@ -11,9 +11,8 @@ import { ItemService } from '../../services/item.service';
   imports: [CommonModule, FormsModule],
   templateUrl: './edit-item.component.html'
 })
-export class EditItemComponent implements OnInit {
+export class EditItemComponent {
   @Input() item!: Item;
-  @Input() items: Item[] = [];
   @Output() itemCreated = new EventEmitter<Item>();
   @Output() cancelled = new EventEmitter<void>();
 
@@ -26,16 +25,19 @@ export class EditItemComponent implements OnInit {
 
   constructor(public itemService: ItemService, private errorService: ErrorService) {}
 
-  ngOnInit() {}
+  private updateItem(updated: Item, onSuccess?: () => void) {
+    const err = this.itemService.save(updated);
+    if (err) {
+      this.errorService.showError(err);
+      return false;
+    }
+    if (onSuccess) onSuccess();
+    return true;
+  }
 
   save() {
     if (this.item && this.item.id) {
-      const err = this.itemService.save(this.item);
-      if (err) {
-        this.errorService.showError(err);
-        return;
-      }
-      this.itemCreated.emit({ ...this.item });
+      this.updateItem(this.item, () => this.itemCreated.emit({ ...this.item }));
     }
   }
 
@@ -43,13 +45,10 @@ export class EditItemComponent implements OnInit {
     const tag = this.newItemTag.trim();
     if (this.item && tag && !this.item.itemTags.includes(tag)) {
       const updated = { ...this.item, itemTags: [...this.item.itemTags, tag] };
-      const err = this.itemService.save(updated);
-      if (err) {
-        this.errorService.showError(err);
-        return;
-      }
-      this.newItemTag = '';
-      this.itemTagSuggestions = [];
+      this.updateItem(updated, () => {
+        this.newItemTag = '';
+        this.itemTagSuggestions = [];
+      });
     }
   }
 
@@ -57,35 +56,24 @@ export class EditItemComponent implements OnInit {
     const tag = this.newChecklistTag.trim();
     if (this.item && tag && !this.item.checklistTags.includes(tag)) {
       const updated = { ...this.item, checklistTags: [...this.item.checklistTags, tag] };
-      const err = this.itemService.save(updated);
-      if (err) {
-        this.errorService.showError(err);
-        return;
-      }
-      this.newChecklistTag = '';
-      this.checklistTagSuggestions = [];
+      this.updateItem(updated, () => {
+        this.newChecklistTag = '';
+        this.checklistTagSuggestions = [];
+      });
     }
   }
 
   removeItemTag(tag: ItemTag) {
     if (this.item) {
       const updated = { ...this.item, itemTags: this.item.itemTags.filter(t => t !== tag) };
-      const err = this.itemService.save(updated);
-      if (err) {
-        this.errorService.showError(err);
-        return;
-      }
+      this.updateItem(updated);
     }
   }
 
   removeChecklistTag(tag: ChecklistTag) {
     if (this.item) {
       const updated = { ...this.item, checklistTags: this.item.checklistTags.filter(t => t !== tag) };
-      const err = this.itemService.save(updated);
-      if (err) {
-        this.errorService.showError(err);
-        return;
-      }
+      this.updateItem(updated);
     }
   }
 
