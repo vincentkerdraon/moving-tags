@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ChecklistTag, DestinationTag, Item, ItemTag } from '../../models/data.models';
 import { ErrorService } from '../../services/error.service';
@@ -23,7 +23,7 @@ export class EditItemComponent {
   confirmDelete = false;
   destinationOptions = Object.values(DestinationTag);
 
-  constructor(public itemService: ItemService, private errorService: ErrorService) {}
+  constructor(public itemService: ItemService, private errorService: ErrorService, private cdr: ChangeDetectorRef) {}
 
   private updateItem(updated: Item, onSuccess?: () => void) {
     const err = this.itemService.save(updated);
@@ -37,7 +37,13 @@ export class EditItemComponent {
 
   save() {
     if (this.item && this.item.id) {
-      this.updateItem(this.item, () => this.itemCreated.emit({ ...this.item }));
+      this.updateItem(this.item, () => {
+        const updated = this.itemService.items.find(i => i.id === this.item.id);
+        if (updated) {
+          this.item = { ...updated };
+        }
+        this.itemCreated.emit({ ...this.item });
+      });
     }
   }
 
@@ -134,14 +140,17 @@ export class EditItemComponent {
 
   onPhotoInput(event: Event) {
     const input = event.target as HTMLInputElement;
-    if (!input.files || !this.item) return;
+    if (!input.files || !this.item) {
+      return;
+    }
     const files = Array.from(input.files);
     let updatedPhotos = [...this.item.photos];
     let loaded = 0;
     for (const file of files) {
       const reader = new FileReader();
       reader.onload = () => {
-        updatedPhotos.push(reader.result as string);
+        const photoId = this.itemService.addPhoto(reader.result as string);
+        updatedPhotos.push(photoId);
         loaded++;
         if (loaded === files.length) {
           const updated = { ...this.item, photos: updatedPhotos };
@@ -149,6 +158,12 @@ export class EditItemComponent {
           if (err) {
             this.errorService.showError(err);
             return;
+          }
+          // Force local item update after save
+          const refreshed = this.itemService.items.find(i => i.id === this.item.id);
+          if (refreshed) {
+            this.item = { ...refreshed };
+            this.cdr.detectChanges();
           }
         }
       };
@@ -166,5 +181,13 @@ export class EditItemComponent {
 
   onCancel() {
     this.cancelled.emit();
+  }
+
+  get photoColumns(): string[][] {
+    const cols: string[][] = [[], [], [], []];
+    this.item.photos.forEach((photoId, i) => {
+      cols[i % 4].push(photoId);
+    });
+    return cols;
   }
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ChecklistTag, ClientId, DestinationTag, Item, ItemAction, ItemDelta, ItemTag } from '../models/data.models';
+import { ChecklistTag, ClientId, DestinationTag, Item, ItemAction, ItemDelta, ItemTag, Photo, PhotoId } from '../models/data.models';
 
 function generateClientId(): ClientId {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -9,6 +9,7 @@ function generateClientId(): ClientId {
 export class ItemService {
   private _items: Item[] = [];
   private _itemDeltas: ItemDelta[] = [];
+  private _photos: Photo[] = [];
   allItemTags: Set<ItemTag> = new Set();
   allChecklistTags: Set<ChecklistTag> = new Set();
   readonly clientId: ClientId = generateClientId();
@@ -135,5 +136,23 @@ export class ItemService {
         ...(destination !== undefined ? { destination } : {})
       });
     }
+  }
+
+  /**
+   * Add a photo to the service and return a generated photo id.
+   * @param data Base64 encoded photo data
+   * @returns PhotoId
+   */
+  addPhoto(data: string): PhotoId {
+    const id = 'photo_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    this._photos.push({ id, data });
+    return id;
+  }
+
+  /**
+   * Get the photo data (base64) for a given photo id.
+   */
+  getPhotoData(photoId: PhotoId): string | undefined {
+    return this._photos.find(p => p.id === photoId)?.data;
   }
 }
