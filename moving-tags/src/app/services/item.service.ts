@@ -13,8 +13,41 @@ export class ItemService {
   allItemTags: Set<ItemTag> = new Set();
   allChecklistTags: Set<ChecklistTag> = new Set();
   readonly clientId: ClientId = generateClientId();
+  
+  private static readonly STORAGE_KEY = 'items';
+  private static readonly DELTAS_KEY = 'itemDeltas';
+  private static readonly CLIENT_ID_KEY = 'clientId';
 
-  constructor(private imageService: ImageService) {}
+  constructor(private imageService: ImageService) {
+    const storedItems = localStorage.getItem(ItemService.STORAGE_KEY);
+    if (storedItems) {
+      try {
+        this._items = JSON.parse(storedItems);
+      } catch {
+        this._items = [];
+      }
+    }
+    const storedDeltas = localStorage.getItem(ItemService.DELTAS_KEY);
+    if (storedDeltas) {
+      try {
+        this._itemDeltas = JSON.parse(storedDeltas);
+      } catch {
+        this._itemDeltas = [];
+      }
+    }
+    const storedClientId = localStorage.getItem(ItemService.CLIENT_ID_KEY);
+    if (storedClientId) {
+      this.clientId = storedClientId as ClientId;
+    } else {
+      localStorage.setItem(ItemService.CLIENT_ID_KEY, this.clientId);
+    }
+  }
+
+  private persist() {
+    localStorage.setItem(ItemService.STORAGE_KEY, JSON.stringify(this._items));
+    localStorage.setItem(ItemService.DELTAS_KEY, JSON.stringify(this._itemDeltas));
+    localStorage.setItem(ItemService.CLIENT_ID_KEY, this.clientId);
+  }
 
   get items(): Item[] {
     return this._items;
@@ -70,6 +103,7 @@ export class ItemService {
       ...(item.destination !== undefined ? { destination: item.destination } : {})
     };
     this._itemDeltas.push(delta);
+    this.persist();
   }
 
   /**
@@ -94,6 +128,7 @@ export class ItemService {
         ...(item.destination !== undefined ? { destination: item.destination } : {})
       };
       this._itemDeltas.push(delta);
+      this.persist();
     }
   }
 
