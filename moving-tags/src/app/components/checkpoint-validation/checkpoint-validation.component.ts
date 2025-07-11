@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Item } from '../../models/data.models';
+import { ItemService } from '../../services/item.service';
 
 @Component({
   selector: 'app-checkpoint-validation',
@@ -14,4 +15,6 @@ export class CheckpointValidationComponent {
   @Input() popupPreventClose!: boolean;
   @Output() keep = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
+
+  constructor(public itemService: ItemService) {}
 }

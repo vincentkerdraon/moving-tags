@@ -37,7 +37,12 @@ export class EditItemComponent {
 
   save() {
     if (this.item && this.item.id) {
-      this.updateItem(this.item, () => {
+      // Treat 0 as no value for weight
+      const itemToSave = {
+        ...this.item,
+        weight: (this.item.weight === 0 ? undefined : this.item.weight)
+      };
+      this.updateItem(itemToSave, () => {
         const updated = this.itemService.items.find(i => i.id === this.item.id);
         if (updated) {
           this.item = { ...updated };
@@ -187,6 +192,14 @@ export class EditItemComponent {
     const cols: string[][] = [[], [], [], []];
     this.item.photos.forEach((photoId, i) => {
       cols[i % 4].push(photoId);
+    });
+    return cols;
+  }
+
+  getPhotoColumns(count: number): string[][] {
+    const cols: string[][] = Array.from({ length: count }, () => []);
+    this.item.photos.forEach((photoId, i) => {
+      cols[i % count].push(photoId);
     });
     return cols;
   }

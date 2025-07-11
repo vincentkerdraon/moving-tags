@@ -13,8 +13,14 @@
           <span *ngIf="popupItem.weight !== undefined">Weight: <b>{{ popupItem.weight }} kg</b></span>
           <span *ngIf="popupItem.destination" class="ms-3">Destination: <b>{{ popupItem.destination }}</b></span>
         </div>
-        <div class="d-flex flex-wrap gap-2 mb-3">
-          <img *ngFor="let photo of popupItem.photos" [src]="photo" class="img-thumbnail" style="max-width: 100px; max-height: 100px;" alt="Item photo">
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-2 mb-3">
+          <ng-container *ngFor="let photoId of popupItem.photos">
+            <div class="col d-flex flex-column align-items-center">
+              <div class="mb-2 w-100">
+                <img [src]="itemService.getPhotoData(photoId)" class="img-thumbnail w-100" style="height: auto; max-width: 100%; max-height: 300px; object-fit: contain;" alt="Item photo">
+              </div>
+            </div>
+          </ng-container>
           <span *ngIf="!popupItem.photos.length" class="text-muted">No photos</span>
         </div>
         <div class="mb-2 position-relative" style="height: 42px;">
