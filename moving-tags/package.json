@@ -28,6 +28,8 @@
     "@angular/router": "^20.1.0",
     "angularx-qrcode": "^20.0.0",
     "bootstrap": "^5.3.7",
+    "browser-image-compression": "^2.0.2",
+    "exif-js": "^2.3.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },

@@ -3,6 +3,7 @@ import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angu
 import { FormsModule } from '@angular/forms';
 import { ChecklistTag, DestinationTag, Item, ItemTag } from '../../models/data.models';
 import { ErrorService } from '../../services/error.service';
+import { ImageService } from '../../services/image.service';
 import { ItemService } from '../../services/item.service';
 
 @Component({
@@ -23,7 +24,7 @@ export class EditItemComponent {
   confirmDelete = false;
   destinationOptions = Object.values(DestinationTag);
 
-  constructor(public itemService: ItemService, private errorService: ErrorService, private cdr: ChangeDetectorRef) {}
+  constructor(public itemService: ItemService, private errorService: ErrorService, private cdr: ChangeDetectorRef, public imageService: ImageService) {}
 
   private updateItem(updated: Item, onSuccess?: () => void) {
     const err = this.itemService.save(updated);
@@ -143,7 +144,7 @@ export class EditItemComponent {
     this.checklistTagSuggestions = [];
   }
 
-  onPhotoInput(event: Event) {
+  async onPhotoInput(event: Event) {
     const input = event.target as HTMLInputElement;
     if (!input.files || !this.item) {
       return;
@@ -152,9 +153,9 @@ export class EditItemComponent {
     let updatedPhotos = [...this.item.photos];
     let loaded = 0;
     for (const file of files) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const photoId = this.itemService.addPhoto(reader.result as string);
+      try {
+        const base64 = await this.imageService.processImage(file);
+        const photoId = this.imageService.addPhoto(base64);
         updatedPhotos.push(photoId);
         loaded++;
         if (loaded === files.length) {
@@ -171,8 +172,9 @@ export class EditItemComponent {
             this.cdr.detectChanges();
           }
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        this.errorService.showError('Photo processing failed.');
+      }
     }
     input.value = '';
   }

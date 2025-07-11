@@ -17,7 +17,7 @@
           <ng-container *ngFor="let photoId of popupItem.photos">
             <div class="col d-flex flex-column align-items-center">
               <div class="mb-2 w-100">
-                <img [src]="itemService.getPhotoData(photoId)" class="img-thumbnail w-100" style="height: auto; max-width: 100%; max-height: 300px; object-fit: contain;" alt="Item photo">
+                <img [src]="imageService.getPhotoData(photoId)" class="img-thumbnail w-100" style="height: auto; max-width: 100%; max-height: 300px; object-fit: contain;" alt="Item photo">
               </div>
             </div>
           </ng-container>

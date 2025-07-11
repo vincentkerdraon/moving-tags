@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Item } from '../../models/data.models';
+import { ImageService } from '../../services/image.service';
 import { ItemService } from '../../services/item.service';
 
 @Component({
@@ -16,5 +17,5 @@ export class CheckpointValidationComponent {
   @Output() keep = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
 
-  constructor(public itemService: ItemService) {}
+  constructor(public itemService: ItemService,public imageService: ImageService) {}
 }
