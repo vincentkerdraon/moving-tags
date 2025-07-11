@@ -119,11 +119,15 @@ export class ItemService {
           if (!tags.includes(tag)) tags.push(tag);
         }
       }
+      // Randomly assign a weight to some items
+      const hasWeight = Math.random() < 0.6; // 60% chance to have a weight
+      const weight = hasWeight ? +(Math.random() * 30 + 1).toFixed(1) : undefined;
       this.save({
         id: `${i.toString().padStart(3, '0')}`,
         itemTags: tags,
         checklistTags: [checkpointTag],
-        photos: []
+        photos: [],
+        ...(weight !== undefined ? { weight } : {})
       });
     }
   }
