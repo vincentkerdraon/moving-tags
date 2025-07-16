@@ -23,6 +23,17 @@
 </nav>
 
 <main class="container-fluid">
+  <div *ngIf="showTestDataAlert" class="alert alert-info" role="alert">
+    <strong>Getting started:</strong> If you are just testing, I can auto-fill
+    some test data to help you explore the features.
+    <button
+      type="button"
+      class="btn btn-outline-primary btn-sm ms-2"
+      (click)="generateTestData()"
+    >
+      Generate Test Data
+    </button>
+  </div>
   <router-outlet></router-outlet>
 </main>
 

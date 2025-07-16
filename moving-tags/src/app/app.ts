@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { EditItemComponent } from './components/edit-item/edit-item.component';
 import { ErrorComponent } from "./components/error/error.component";
@@ -13,14 +13,20 @@ import { ItemService } from './services/item.service';
   styles: [], 
   standalone: true,
 })
-export class App implements OnInit {
+export class App {
 
   showEditPopup = false;
   popupItem: any = null;
 
   constructor(private itemService: ItemService, public errorService: ErrorService) {}
 
-  ngOnInit() {
+
+
+  get showTestDataAlert(): boolean {
+    return this.itemService.items.length === 0;
+  }
+
+  generateTestData() {
     this.itemService.generateFakeData();
   }
 
