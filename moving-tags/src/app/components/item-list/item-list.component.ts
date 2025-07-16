@@ -5,12 +5,11 @@ import { Item } from '../../models/data.models';
 import { ItemService } from '../../services/item.service';
 import { DestinationTagComponent } from '../destination-tag/destination-tag.component';
 import { EditItemComponent } from '../edit-item/edit-item.component';
-import { InputIdComponent } from '../input-id/input-id.component';
 
 @Component({
   selector: 'app-item-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, InputIdComponent, EditItemComponent, DestinationTagComponent],
+  imports: [CommonModule, FormsModule, EditItemComponent, DestinationTagComponent],
   templateUrl: './item-list.component.html'
 })
 export class ItemListComponent {
@@ -20,6 +19,7 @@ export class ItemListComponent {
   @Output() scanQr = new EventEmitter<void>();
 
   editingItem: Item | null = null;
+  newItemId = '';
 
   constructor(public itemService: ItemService) {}
 
@@ -54,7 +54,47 @@ export class ItemListComponent {
   }
 
   onInputId(id: string) {
-    this.editItem.emit(id);
+    // Find existing item or create a new one
+    const found = this.items.find(item => item.id === id);
+    if (found) {
+      // Edit existing item
+      this.editingItem = { ...found, itemTags: [...found.itemTags], checklistTags: [...found.checklistTags], photos: [...found.photos] };
+    } else {
+      // Create new item with the provided ID
+      this.editingItem = {
+        id: id,
+        itemTags: [],
+        checklistTags: [],
+        photos: [],
+        destination: undefined,
+        weight: undefined
+      };
+    }
+  }
+
+  onCreateNewItem() {
+    const id = this.newItemId.trim();
+    if (!id) return;
+    
+    // Check if item already exists
+    const found = this.items.find(item => item.id === id);
+    if (found) {
+      // Edit existing item
+      this.editingItem = { ...found, itemTags: [...found.itemTags], checklistTags: [...found.checklistTags], photos: [...found.photos] };
+    } else {
+      // Create new item with the provided ID
+      this.editingItem = {
+        id: id,
+        itemTags: [],
+        checklistTags: [],
+        photos: [],
+        destination: undefined,
+        weight: undefined
+      };
+    }
+    
+    // Clear the input field
+    this.newItemId = '';
   }
 
   get filteredItems() {
