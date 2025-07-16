@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ChecklistTag, DestinationTag, Item, ItemTag } from '../../models/data.models';
 import { ErrorService } from '../../services/error.service';
@@ -12,11 +12,14 @@ import { ItemService } from '../../services/item.service';
   imports: [CommonModule, FormsModule],
   templateUrl: './edit-item.component.html'
 })
-export class EditItemComponent {
+export class EditItemComponent implements OnInit {
   @Input() item!: Item;
   @Output() itemCreated = new EventEmitter<Item>();
   @Output() cancelled = new EventEmitter<void>();
 
+  // Local working copy of the item
+  localItem!: Item;
+  
   newItemTag = '';
   newChecklistTag = '';
   itemTagSuggestions: ItemTag[] = [];
@@ -26,66 +29,62 @@ export class EditItemComponent {
 
   constructor(public itemService: ItemService, private errorService: ErrorService, private cdr: ChangeDetectorRef, public imageService: ImageService) {}
 
-  private updateItem(updated: Item, onSuccess?: () => void) {
-    const err = this.itemService.save(updated);
-    if (err) {
-      this.errorService.showError(err);
-      return false;
-    }
-    if (onSuccess) onSuccess();
-    return true;
+  ngOnInit() {
+    // Create a deep copy of the item for local editing
+    this.localItem = {
+      ...this.item,
+      itemTags: [...this.item.itemTags],
+      checklistTags: [...this.item.checklistTags],
+      photos: [...this.item.photos]
+    };
   }
 
   save() {
-    if (this.item && this.item.id) {
+    if (this.localItem && this.localItem.id) {
       // Treat 0 as no value for weight
       const itemToSave = {
-        ...this.item,
-        weight: (this.item.weight === 0 ? undefined : this.item.weight)
+        ...this.localItem,
+        weight: (this.localItem.weight === 0 ? undefined : this.localItem.weight)
       };
-      this.updateItem(itemToSave, () => {
-        const updated = this.itemService.items.find(i => i.id === this.item.id);
-        if (updated) {
-          this.item = { ...updated };
-        }
-        this.itemCreated.emit({ ...this.item });
-      });
+      const err = this.itemService.save(itemToSave);
+      if (err) {
+        this.errorService.showError(err);
+        return;
+      }
+      
+      // Update the original item reference and emit the changes
+      this.item = { ...itemToSave };
+      this.itemCreated.emit({ ...this.item });
     }
   }
 
   addItemTag() {
     const tag = this.newItemTag.trim();
-    if (this.item && tag && !this.item.itemTags.includes(tag)) {
-      const updated = { ...this.item, itemTags: [...this.item.itemTags, tag] };
-      this.updateItem(updated, () => {
-        this.newItemTag = '';
-        this.itemTagSuggestions = [];
-      });
+    if (this.localItem && tag && !this.localItem.itemTags.includes(tag)) {
+      this.localItem.itemTags = [...this.localItem.itemTags, tag];
+      this.newItemTag = '';
+      this.itemTagSuggestions = [];
     }
   }
 
   addChecklistTag() {
     const tag = this.newChecklistTag.trim();
-    if (this.item && tag && !this.item.checklistTags.includes(tag)) {
-      const updated = { ...this.item, checklistTags: [...this.item.checklistTags, tag] };
-      this.updateItem(updated, () => {
-        this.newChecklistTag = '';
-        this.checklistTagSuggestions = [];
-      });
+    if (this.localItem && tag && !this.localItem.checklistTags.includes(tag)) {
+      this.localItem.checklistTags = [...this.localItem.checklistTags, tag];
+      this.newChecklistTag = '';
+      this.checklistTagSuggestions = [];
     }
   }
 
   removeItemTag(tag: ItemTag) {
-    if (this.item) {
-      const updated = { ...this.item, itemTags: this.item.itemTags.filter(t => t !== tag) };
-      this.updateItem(updated);
+    if (this.localItem) {
+      this.localItem.itemTags = this.localItem.itemTags.filter(t => t !== tag);
     }
   }
 
   removeChecklistTag(tag: ChecklistTag) {
-    if (this.item) {
-      const updated = { ...this.item, checklistTags: this.item.checklistTags.filter(t => t !== tag) };
-      this.updateItem(updated);
+    if (this.localItem) {
+      this.localItem.checklistTags = this.localItem.checklistTags.filter(t => t !== tag);
     }
   }
 
@@ -96,7 +95,7 @@ export class EditItemComponent {
         .filter(tag => {
           const tagNorm = tag.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
           const inputNorm = input.normalize('NFD').replace(/\p{Diacritic}/gu, '');
-          return tagNorm.includes(inputNorm) && !this.item.itemTags.includes(tag);
+          return tagNorm.includes(inputNorm) && !this.localItem.itemTags.includes(tag);
         })
         .slice(0, 5);
     } else {
@@ -105,13 +104,8 @@ export class EditItemComponent {
   }
 
   addSuggestedItemTag(tag: ItemTag) {
-    if (this.item && !this.item.itemTags.includes(tag)) {
-      const updated = { ...this.item, itemTags: [...this.item.itemTags, tag] };
-      const err = this.itemService.save(updated);
-      if (err) {
-        this.errorService.showError(err);
-        return;
-      }
+    if (this.localItem && !this.localItem.itemTags.includes(tag)) {
+      this.localItem.itemTags = [...this.localItem.itemTags, tag];
     }
     this.newItemTag = '';
     this.itemTagSuggestions = [];
@@ -123,7 +117,7 @@ export class EditItemComponent {
       this.checklistTagSuggestions = Array.from(this.itemService.allChecklistTags)
         .filter(tag => 
           tag.toLowerCase().includes(input) && 
-          !this.item.checklistTags.includes(tag)
+          !this.localItem.checklistTags.includes(tag)
         )
         .slice(0, 5);
     } else {
@@ -132,13 +126,8 @@ export class EditItemComponent {
   }
 
   addSuggestedChecklistTag(tag: ChecklistTag) {
-    if (this.item && !this.item.checklistTags.includes(tag)) {
-      const updated = { ...this.item, checklistTags: [...this.item.checklistTags, tag] };
-      const err = this.itemService.save(updated);
-      if (err) {
-        this.errorService.showError(err);
-        return;
-      }
+    if (this.localItem && !this.localItem.checklistTags.includes(tag)) {
+      this.localItem.checklistTags = [...this.localItem.checklistTags, tag];
     }
     this.newChecklistTag = '';
     this.checklistTagSuggestions = [];
@@ -146,11 +135,11 @@ export class EditItemComponent {
 
   async onPhotoInput(event: Event) {
     const input = event.target as HTMLInputElement;
-    if (!input.files || !this.item) {
+    if (!input.files || !this.localItem) {
       return;
     }
     const files = Array.from(input.files);
-    let updatedPhotos = [...this.item.photos];
+    let updatedPhotos = [...this.localItem.photos];
     let loaded = 0;
     for (const file of files) {
       try {
@@ -159,18 +148,8 @@ export class EditItemComponent {
         updatedPhotos.push(photoId);
         loaded++;
         if (loaded === files.length) {
-          const updated = { ...this.item, photos: updatedPhotos };
-          const err = this.itemService.save(updated);
-          if (err) {
-            this.errorService.showError(err);
-            return;
-          }
-          // Force local item update after save
-          const refreshed = this.itemService.items.find(i => i.id === this.item.id);
-          if (refreshed) {
-            this.item = { ...refreshed };
-            this.cdr.detectChanges();
-          }
+          this.localItem.photos = updatedPhotos;
+          this.cdr.detectChanges();
         }
       } catch (err) {
         this.errorService.showError('Photo processing failed.');
@@ -180,8 +159,8 @@ export class EditItemComponent {
   }
 
   onDeleteItem() {
-    if (this.item && this.item.id) {
-      this.itemService.removeItem(this.item.id);
+    if (this.localItem && this.localItem.id) {
+      this.itemService.removeItem(this.localItem.id);
       this.confirmDelete = false;
     }
   }
@@ -192,7 +171,7 @@ export class EditItemComponent {
 
   get photoColumns(): string[][] {
     const cols: string[][] = [[], [], [], []];
-    this.item.photos.forEach((photoId, i) => {
+    this.localItem.photos.forEach((photoId, i) => {
       cols[i % 4].push(photoId);
     });
     return cols;

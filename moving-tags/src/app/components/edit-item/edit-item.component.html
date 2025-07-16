@@ -10,7 +10,7 @@
           name="qrCodeId"
           class="form-control"
           disabled
-          [value]="item.id"
+          [value]="localItem.id"
           readonly
           aria-label="Item ID"
           aria-describedby="item-id-label"
@@ -21,7 +21,7 @@
     <div class="mb-4">
       <label class="form-label">Item Tags</label>
       <div class="mb-2 d-flex flex-wrap gap-2">
-        <span *ngFor="let tag of item.itemTags" class="badge rounded-pill bg-primary d-flex align-items-center px-3 py-2 fs-6">
+        <span *ngFor="let tag of localItem.itemTags" class="badge rounded-pill bg-primary d-flex align-items-center px-3 py-2 fs-6">
           {{ tag }}
           <button type="button" class="btn-close btn-close-white ms-2" aria-label="Remove" (click)="removeItemTag(tag)"></button>
         </span>
@@ -55,7 +55,7 @@
         Checklist Tags <span class="text-muted small">(Optional)</span>
       </label>
       <div class="mb-2 d-flex flex-wrap gap-2">
-        <span *ngFor="let tag of item.checklistTags" class="badge rounded-pill bg-info text-dark d-flex align-items-center px-3 py-2 fs-6">
+        <span *ngFor="let tag of localItem.checklistTags" class="badge rounded-pill bg-info text-dark d-flex align-items-center px-3 py-2 fs-6">
           {{ tag }}
           <button type="button" class="btn-close ms-2" aria-label="Remove" (click)="removeChecklistTag(tag)"></button>
         </span>
@@ -90,7 +90,7 @@
         <input type="file" class="form-control" accept="image/*" multiple (change)="onPhotoInput($event)">
       </div>
       <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-2">
-        <ng-container *ngFor="let photoId of item.photos">
+        <ng-container *ngFor="let photoId of localItem.photos">
           <div class="col d-flex flex-column align-items-center">
             <div class="mb-2 w-100">
               <img [src]="imageService.getPhotoData(photoId)" class="img-thumbnail w-100" style="height: auto; max-width: 100%; max-height: 300px; object-fit: contain;" alt="Item photo">
@@ -102,12 +102,12 @@
     <!-- Weight -->
     <div class="mb-4">
       <label class="form-label">Weight (kg) <span class="text-muted small">(Optional)</span></label>
-      <input type="number" class="form-control" [(ngModel)]="item.weight" name="weight" min="0" step="0.01" placeholder="Enter weight (optional)">
+      <input type="number" class="form-control" [(ngModel)]="localItem.weight" name="weight" min="0" step="0.01" placeholder="Enter weight (optional)">
     </div>
     <!-- Destination -->
     <div class="mb-4">
       <label class="form-label">Destination <span class="text-muted small">(Optional)</span></label>
-      <select class="form-select" [(ngModel)]="item.destination" name="destination">
+      <select class="form-select" [(ngModel)]="localItem.destination" name="destination">
         <option [ngValue]="undefined">Select destination (optional)</option>
         <option *ngFor="let dest of destinationOptions" [ngValue]="dest">{{ dest | titlecase }}</option>
       </select>
