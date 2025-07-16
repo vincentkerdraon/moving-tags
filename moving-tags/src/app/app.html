@@ -1,6 +1,35 @@
 <nav class="navbar navbar-expand navbar-dark bg-primary mb-4">
   <div class="container-fluid">
-    <a class="navbar-brand" routerLink="/">Moving<br />Tags</a>
+    <a
+      class="navbar-brand position-relative"
+      routerLink="/"
+      style="
+        padding: 0.5rem 1rem;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+      "
+    >
+      <div
+        style="
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-image: url('icon-large.png');
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+          opacity: 0.45;
+          z-index: 0;
+        "
+      ></div>
+      <span
+        style="position: relative; z-index: 2; color: white; font-weight: bold"
+        >Moving<br />Tags</span
+      >
+    </a>
     <ul class="navbar-nav me-auto mb-2 mb-lg-0 flex-row gap-2">
       <li class="nav-item">
         <a class="nav-link" routerLink="/list">List</a>
