@@ -69,11 +69,19 @@
             style="z-index: 1"
           >
             <button
+              *ngIf="!keepClicked"
               class="btn btn-outline-secondary flex-fill"
-              (click)="keep.emit()"
+              (click)="onKeepClick()"
               [disabled]="popupPreventClose"
             >
               Keep
+            </button>
+            <button
+              *ngIf="keepClicked"
+              class="btn btn-outline-primary flex-fill"
+              (click)="edit.emit()"
+            >
+              Edit
             </button>
             <button
               class="btn btn-outline-danger flex-fill"

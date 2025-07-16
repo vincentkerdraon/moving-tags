@@ -182,4 +182,12 @@ export class CheckpointComponent {
   onModalCancel() {
     this.editingItem = null;
   }
+
+  onPopupEdit() {
+    if (this.popupItem) {
+      const itemId = this.popupItem.id;
+      this.closePopup();
+      this.openEditModal(itemId);
+    }
+  }
 }
