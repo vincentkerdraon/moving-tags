@@ -162,6 +162,7 @@ export class EditItemComponent implements OnInit {
     if (this.localItem && this.localItem.id) {
       this.itemService.removeItem(this.localItem.id);
       this.confirmDelete = false;
+      this.cancelled.emit(); // Close the edit popup after deletion
     }
   }
 
