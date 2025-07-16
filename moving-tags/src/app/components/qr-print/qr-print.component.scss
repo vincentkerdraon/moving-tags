@@ -9,7 +9,8 @@
     position: absolute;
     left: 0;
     top: 0;
-    width: 100vw;
+    width: 100%;
+    max-width: 100%;
     background: white;
     padding: 0;
     margin: 0;
@@ -18,12 +19,22 @@
   .d-print-none, .form-label, #idsInput, label[for="idsInput"] {
     display: none !important;
   }
+  .row {
+    margin: 0;
+    width: 100%;
+  }
   .row.mb-4 {
     page-break-inside: avoid;
-    margin-bottom: -0.0rem !important;
+    margin-bottom: 0.5rem !important;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
   }
   .col-2 {
-    padding: 0.5rem 0.2rem;
+    flex: 0 0 16.6%;
+    max-width: 16.6%;
+    padding: 0.25rem;
+    box-sizing: border-box;
   }
   .qr-label {
     font-size: 0.9rem;

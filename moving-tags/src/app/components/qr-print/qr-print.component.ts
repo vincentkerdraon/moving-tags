@@ -12,6 +12,8 @@ import { QrCodeDisplayComponent } from '../qr-code-display/qr-code-display.compo
 })
 export class QrPrintComponent {
   idsInput = '';
+  contact = '';
+  idPrefix = '';
   cols = Array(6);
 
   get parsedIds(): string[] {
