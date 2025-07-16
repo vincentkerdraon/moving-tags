@@ -97,9 +97,12 @@ export class EditItemComponent implements OnInit {
           const inputNorm = input.normalize('NFD').replace(/\p{Diacritic}/gu, '');
           return tagNorm.includes(inputNorm) && !this.localItem.itemTags.includes(tag);
         })
-        .slice(0, 5);
+        .slice(0, 10);
     } else {
-      this.itemTagSuggestions = [];
+      // Show all available tags when input is empty
+      this.itemTagSuggestions = Array.from(this.itemService.allItemTags)
+        .filter(tag => !this.localItem.itemTags.includes(tag))
+        .slice(0, 10);
     }
   }
 
@@ -119,9 +122,12 @@ export class EditItemComponent implements OnInit {
           tag.toLowerCase().includes(input) && 
           !this.localItem.checklistTags.includes(tag)
         )
-        .slice(0, 5);
+        .slice(0, 10);
     } else {
-      this.checklistTagSuggestions = [];
+      // Show all available tags when input is empty
+      this.checklistTagSuggestions = Array.from(this.itemService.allChecklistTags)
+        .filter(tag => !this.localItem.checklistTags.includes(tag))
+        .slice(0, 10);
     }
   }
 
@@ -184,5 +190,19 @@ export class EditItemComponent implements OnInit {
       cols[i % count].push(photoId);
     });
     return cols;
+  }
+
+  onItemTagFocus() {
+    // Show all available tags when input gets focus
+    this.itemTagSuggestions = Array.from(this.itemService.allItemTags)
+      .filter(tag => !this.localItem.itemTags.includes(tag))
+      .slice(0, 10);
+  }
+
+  onChecklistTagFocus() {
+    // Show all available tags when input gets focus
+    this.checklistTagSuggestions = Array.from(this.itemService.allChecklistTags)
+      .filter(tag => !this.localItem.checklistTags.includes(tag))
+      .slice(0, 10);
   }
 }

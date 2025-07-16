@@ -34,6 +34,9 @@ export class ItemService {
         this._itemDeltas = [];
       }
     }
+    
+    // Rebuild tag sets after loading items from storage
+    this.rebuildTagSets();
   }
 
   private persist() {
@@ -95,6 +98,7 @@ export class ItemService {
       ...(item.destination !== undefined ? { destination: item.destination } : {})
     };
     this._itemDeltas.push(delta);
+    this.rebuildTagSets(); // Rebuild tag sets after any item change
     this.persist();
   }
 
@@ -120,6 +124,7 @@ export class ItemService {
         ...(item.destination !== undefined ? { destination: item.destination } : {})
       };
       this._itemDeltas.push(delta);
+      this.rebuildTagSets(); // Rebuild tag sets after item removal
       this.persist();
     }
   }
