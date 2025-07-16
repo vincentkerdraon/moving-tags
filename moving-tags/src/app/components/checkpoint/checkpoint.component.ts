@@ -79,38 +79,52 @@ export class CheckpointComponent {
     this.popupItem = item;
     this.popupPreventClose = false;
     this.popupProgress = 100;
+    
+    // Clear any existing timeout or interval
     clearTimeout(this.popupTimeout);
-    if (this.popupInterval) clearInterval(this.popupInterval);
+    if (this.popupInterval) {
+      clearInterval(this.popupInterval);
+    }
+    
     this.popupStart = Date.now();
     const duration = 2500;
+    
     this.popupInterval = setInterval(() => {
       if (!this.popupItem || this.popupPreventClose) return;
       const elapsed = Date.now() - this.popupStart;
       this.popupProgress = Math.max(0, 100 - (elapsed / duration) * 100);
       this.cdr.detectChanges();
+      
       if (this.popupProgress <= 0) {
         this.popupProgress = 0;
         this.popupItem = null;
         clearInterval(this.popupInterval);
+        this.popupInterval = null;
         this.cdr.detectChanges();
       }
-    }, 200);
+    }, 200); // Not too frequent to avoid performance issues. Else it closes before the progress bar can reach 0
   }
 
   preventPopupClose() {
     this.popupPreventClose = true;
     clearTimeout(this.popupTimeout);
-    this.popupProgress=0
-    this.popupInterval=null;
+    if (this.popupInterval) {
+      clearInterval(this.popupInterval);
+      this.popupInterval = null;
+    }
+    this.popupProgress = 100;
     this.cdr.detectChanges();
   }
 
   closePopup() {
     this.popupItem = null;
     this.popupProgress = 100;
+    this.popupPreventClose = false;
     clearTimeout(this.popupTimeout);
-    this.popupProgress=0
-    this.popupInterval=null;
+    if (this.popupInterval) {
+      clearInterval(this.popupInterval);
+      this.popupInterval = null;
+    }
     this.cdr.detectChanges();
   }
 
@@ -133,7 +147,11 @@ export class CheckpointComponent {
   onScanQr() {}
 
   onItemClick(id: string) {
-    this.onSubmitId(id);
+    // Only process clicks for remaining items, not done items
+    const item = this.items.find(i => i.id === id);
+    if (item && !item.checklistTags.includes(this.checkpointId)) {
+      this.onSubmitId(id);
+    }
   }
 
   get remaining() {

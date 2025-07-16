@@ -33,8 +33,10 @@
           <li
             *ngFor="let item of remaining"
             class="list-group-item d-flex justify-content-between align-items-center"
+            (click)="onItemClick(item.id)"
+            style="cursor: pointer"
           >
-            <span (click)="onItemClick(item.id)" style="cursor: pointer">{{
+            <span>{{
               item.id
             }}</span>
             <button
@@ -56,7 +58,7 @@
             *ngFor="let item of done"
             class="list-group-item d-flex justify-content-between align-items-center"
           >
-            <span (click)="onItemClick(item.id)" style="cursor: pointer">{{
+            <span>{{
               item.id
             }}</span>
             <div class="d-flex gap-2">
