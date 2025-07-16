@@ -154,24 +154,27 @@
           ></app-checklist-tag>
         </ng-container>
       </div>
-      <input
-        list="tagList"
-        id="tagInput"
-        class="form-control w-auto d-inline-block"
-        style="max-width: 250px"
-        [(ngModel)]="tagInput"
-        (ngModelChange)="onTagInputChange($event)"
-      />
-      <datalist id="tagList">
-        <option *ngFor="let tag of tagList" [value]="tag"></option>
-      </datalist>
-      <button
-        class="btn btn-primary ms-2"
-        (click)="onSelectTag(tagInput)"
-        [disabled]="!tagInput"
+      <div
+        class="d-flex flex-column flex-sm-row gap-2 align-items-start align-items-sm-center"
       >
-        Create
-      </button>
+        <input
+          list="tagList"
+          id="tagInput"
+          class="form-control flex-grow-1"
+          [(ngModel)]="tagInput"
+          (ngModelChange)="onTagInputChange($event)"
+        />
+        <datalist id="tagList">
+          <option *ngFor="let tag of tagList" [value]="tag"></option>
+        </datalist>
+        <button
+          class="btn btn-primary"
+          (click)="onSelectTag(tagInput)"
+          [disabled]="!tagInput"
+        >
+          Create
+        </button>
+      </div>
     </div>
   </ng-template>
 </div>

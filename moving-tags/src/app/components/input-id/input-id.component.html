@@ -2,6 +2,11 @@
   <button class="btn btn-outline-secondary me-2" (click)="onScanQr()">
     <span aria-hidden="true">📷</span> Scan QR
   </button>
-  <input type="text" class="form-control w-auto me-2" style="max-width: 250px;" [(ngModel)]="id" placeholder="Enter or scan item ID">
+  <input
+    type="text"
+    class="form-control flex-grow-1 me-2"
+    [(ngModel)]="id"
+    placeholder="Enter or scan item ID"
+  />
   <button class="btn btn-primary" (click)="onSubmit()">Go</button>
 </div>

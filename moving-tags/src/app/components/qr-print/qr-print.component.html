@@ -5,14 +5,16 @@
     or items.
   </div>
 
-  <div class="mb-4 d-flex align-items-center gap-2 d-print-none">
+  <div
+    class="mb-4 d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-2 d-print-none"
+  >
     <label for="idsInput" class="form-label mb-0"
       >IDs to print (semicolon separated)</label
     >
     <input
       id="idsInput"
       type="text"
-      class="form-control w-auto"
+      class="form-control flex-grow-1"
       [(ngModel)]="idsInput"
       placeholder="A2; 1B; C3"
     />

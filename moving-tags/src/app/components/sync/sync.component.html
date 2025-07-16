@@ -181,31 +181,44 @@
       syncService.connectionStatus === SyncConnectionStatus.Server_Connected
     "
   >
-    <table class="table table-bordered mt-4">
-      <thead>
-        <tr>
-          <th>Client</th>
-          <th>Last Sync</th>
-          <th>Photos Since Last Sync</th>
-          <th>Item Changes Since Last Sync</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let client of allClients">
-          <td>
-            {{ client === syncService.clientId ? client + " (You)" : client }}
-          </td>
-          <td>
-            {{
-              syncService.lastSync[client]
-                ? (syncService.lastSync[client] | date : "short")
-                : "Never"
-            }}
-          </td>
-          <td>{{ getPhotoCount(client) }}</td>
-          <td>{{ getItemChangeCount(client) }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <div class="table-responsive">
+      <table class="table table-bordered mt-4">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th class="d-none d-md-table-cell">Last Sync</th>
+            <th>Photos</th>
+            <th>Changes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let client of allClients">
+            <td>
+              <div>
+                {{
+                  client === syncService.clientId ? client + " (You)" : client
+                }}
+              </div>
+              <div class="d-md-none text-muted small">
+                {{
+                  syncService.lastSync[client]
+                    ? (syncService.lastSync[client] | date : "short")
+                    : "Never"
+                }}
+              </div>
+            </td>
+            <td class="d-none d-md-table-cell">
+              {{
+                syncService.lastSync[client]
+                  ? (syncService.lastSync[client] | date : "short")
+                  : "Never"
+              }}
+            </td>
+            <td>{{ getPhotoCount(client) }}</td>
+            <td>{{ getItemChangeCount(client) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
