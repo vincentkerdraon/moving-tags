@@ -59,11 +59,11 @@
         />
         <button
           type="button"
-          class="btn btn-primary"
+          class="btn btn-outline-primary"
           (click)="addItemTag()"
           [disabled]="!newItemTag.trim()"
         >
-          Add
+          ➕
         </button>
       </div>
     </div>
@@ -111,11 +111,11 @@
         />
         <button
           type="button"
-          class="btn btn-primary"
+          class="btn btn-outline-primary"
           (click)="addChecklistTag()"
           [disabled]="!newChecklistTag.trim()"
         >
-          Add
+          ➕
         </button>
       </div>
     </div>
@@ -186,16 +186,20 @@
     <div class="d-flex justify-content-between align-items-center mt-4 gap-2">
       <button
         type="button"
-        class="btn btn-danger"
+        class="btn btn-lg btn-outline-danger"
         (click)="confirmDelete = true"
       >
-        Delete Item
+        🗑️
       </button>
-      <button type="button" class="btn btn-secondary" (click)="onCancel()">
-        Cancel
+      <button
+        type="button"
+        class="btn btn-lg btn-outline-secondary"
+        (click)="onCancel()"
+      >
+        ❌
       </button>
       <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="submit" class="btn btn-lg btn-outline-primary">💾</button>
       </div>
     </div>
   </form>
@@ -229,10 +233,10 @@
             class="btn btn-secondary"
             (click)="confirmDelete = false"
           >
-            Cancel
+            ❌
           </button>
           <button type="button" class="btn btn-danger" (click)="onDeleteItem()">
-            Delete
+            🗑️
           </button>
         </div>
       </div>

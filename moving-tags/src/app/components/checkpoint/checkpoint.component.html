@@ -15,7 +15,7 @@
         Switch to another checkpoint
       </button>
     </div>
-    <div class="alert alert-info mb-4">
+    <div class="alert alert-info mb-4" *ngIf="!checkpointId">
       <strong>What is a Checkpoint?</strong><br />
       Use this page to mark items as checked at a specific checkpoint or
       location. Select or create a checkpoint tag above, then scan or enter item
@@ -40,8 +40,9 @@
             <button
               class="btn btn-sm btn-outline-primary ms-2"
               (click)="$event.stopPropagation(); openEditModal(item.id)"
+              title="Details"
             >
-              Details
+              📝
             </button>
           </li>
           <li *ngIf="remaining.length === 0" class="list-group-item text-muted">
@@ -61,14 +62,16 @@
               <button
                 class="btn btn-sm btn-outline-primary"
                 (click)="$event.stopPropagation(); openEditModal(item.id)"
+                title="Details"
               >
-                Details
+                📝
               </button>
               <button
                 class="btn btn-sm btn-outline-warning"
                 (click)="$event.stopPropagation(); onUndoDone(item)"
+                title="Undo"
               >
-                Undo
+                ↺
               </button>
             </div>
           </li>
@@ -164,8 +167,9 @@
           class="btn btn-primary"
           (click)="onSelectTag(tagInput)"
           [disabled]="!tagInput"
+          title="Create checkpoint"
         >
-          Create
+          ✨
         </button>
       </div>
     </div>
