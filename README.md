@@ -1,4 +1,4 @@
-# Moving Checklist App
+# Moving Tags App
 _QR code on the box, static app for checkpoints. Is everything in the truck?_
 
 This is an Angular application designed to help you stay organized during your move. With this app, you can:
