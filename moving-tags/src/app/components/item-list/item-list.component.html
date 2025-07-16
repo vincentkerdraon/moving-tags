@@ -9,30 +9,6 @@
           <th>Tags</th>
           <th class="text-muted d-none d-sm-table-cell">Weight</th>
         </tr>
-        <!-- Filter row integrated in header -->
-        <tr class="bg-light">
-          <td colspan="3" class="py-2">
-            <div class="d-flex align-items-center gap-2">
-              <span class="text-muted small">Filter:</span>
-              <input
-                type="text"
-                class="form-control form-control-sm flex-grow-1"
-                placeholder="Search by ID, Item Tag, or Checklist Tag..."
-                [(ngModel)]="filter"
-              />
-              <button
-                class="btn btn-sm btn-outline-secondary"
-                (click)="filter = ''"
-                [disabled]="!filter"
-                title="Clear filter"
-              >
-                ✕
-              </button>
-            </div>
-          </td>
-        </tr>
-      </thead>
-      <tbody>
         <!-- Row for creating new items -->
         <tr class="table-success bg-opacity-25">
           <td colspan="3" class="py-2">
@@ -48,7 +24,7 @@
               <input
                 type="text"
                 class="form-control form-control-sm flex-grow-1"
-                placeholder="Enter new item ID..."
+                placeholder="New item ID..."
                 [(ngModel)]="newItemId"
                 (keyup.enter)="onCreateNewItem()"
               />
@@ -62,6 +38,33 @@
             </div>
           </td>
         </tr>
+        <!-- Filter row integrated in header -->
+        <tr
+          class="bg-light"
+          *ngIf="filter.length > 0 || filteredItems?.length !== 0"
+        >
+          <td colspan="3" class="py-2">
+            <div class="d-flex align-items-center gap-2">
+              <span class="text-muted small">Filter:</span>
+              <input
+                type="text"
+                class="form-control form-control-sm flex-grow-1"
+                placeholder="Search by ID or Tag..."
+                [(ngModel)]="filter"
+              />
+              <button
+                class="btn btn-sm btn-outline-secondary"
+                (click)="filter = ''"
+                [disabled]="!filter"
+                title="Clear filter"
+              >
+                ✕
+              </button>
+            </div>
+          </td>
+        </tr>
+      </thead>
+      <tbody>
         <tr
           *ngFor="let item of filteredItems"
           (click)="onEdit(item.id)"
@@ -117,12 +120,6 @@
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title">Edit Item</h5>
-          <button
-            type="button"
-            class="btn-close"
-            aria-label="Close"
-            (click)="onModalCancel()"
-          ></button>
         </div>
         <div class="modal-body">
           <app-edit-item
