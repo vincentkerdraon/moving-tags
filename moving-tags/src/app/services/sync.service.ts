@@ -15,7 +15,7 @@ export enum SyncConnectionStatus {
   Client_CreatingAnswer = 'CLIENT_CREATING_ANSWER',
   Client_AnswerCreated = 'CLIENT_ANSWER_CREATED',
   Client_Connected = 'CLIENT_CONNECTED',
-  Client_Failed = 'CLIENT_FAILED',
+  Client_Failed = 'CLIENT_FAILED'
 }
 
 @Injectable({ providedIn: 'root' })
@@ -33,6 +33,8 @@ export class SyncService {
   public connectionStatus: SyncConnectionStatus = SyncConnectionStatus.NotConnected;
   public rawOffer: string | null = null;
   public qrData: string | null = null;
+
+  private visibilityListener: (() => void) | null = null;
 
   constructor(
     public webrtc: WebRTCService
@@ -53,6 +55,14 @@ export class SyncService {
         }
       } catch {}
     }
+
+    // Listen for tab visibility changes to refresh/reconnect if needed
+    this.visibilityListener = () => {
+      if (!document.hidden) {
+        this.refreshConnectionState();
+      }
+    };
+    document.addEventListener('visibilitychange', this.visibilityListener);
   }
 
   startServerConnection(afterUpdate?: () => void) {
@@ -78,6 +88,7 @@ export class SyncService {
     }, true);
     
     this.setupServerDataChannel(afterUpdate);
+    this.setupConnectionStateListeners();
     
     this.webrtc.createOffer().then(() => {
       console.log('[SyncService][Server] Offer created, waiting for ICE candidates...');
@@ -109,11 +120,17 @@ export class SyncService {
     });
     const dataChannel = this.webrtc.createDataChannel();
     this.webrtc.setupDataChannel(dataChannel, () => {
+      // Data channel is open
+      if (this.connectionStatus === SyncConnectionStatus.Server_AnswerProcessed || this.connectionStatus === SyncConnectionStatus.Server_WaitingForAnswer) {
+        this.connectionStatus = SyncConnectionStatus.Server_Connected;
+        console.log('[SyncService][Server] Data channel opened, connection established.');
+      }
       // Send a ping to validate the data connection
       console.log('[SyncService][Server] Send ping to validate data connection.');
       this.webrtc.sendMessage('ping');
       if (afterUpdate) afterUpdate();
     });
+    this.setupConnectionStateListeners();
   }
 
   /**
@@ -174,6 +191,31 @@ export class SyncService {
       // Data channel open for client
       if (afterUpdate) afterUpdate();
     });
+
+    this.setupConnectionStateListeners();
+  }
+
+  /**
+   * Listen to WebRTC connection state and update sync status accordingly.
+   * If connection is lost, set status to NotConnected or Failed.
+   */
+  private setupConnectionStateListeners() {
+    const checkState = () => {
+      const state = this.webrtc.getConnectionState();
+      if (state.peerConnectionState === 'disconnected' || state.peerConnectionState === 'failed') {
+        this.connectionStatus = SyncConnectionStatus.Server_Failed;
+      } else if (state.dataChannelState === 'closed' || !state.hasDataChannel) {
+        this.connectionStatus = SyncConnectionStatus.NotConnected;
+      }
+    };
+    // Listen for connection state changes
+    const pc = this.webrtc.getPeerConnection();
+    if (pc) {
+      pc.onconnectionstatechange = checkState;
+      pc.oniceconnectionstatechange = checkState;
+    }
+    // Also check immediately
+    checkState();
   }
 
   private generateClientId(): SyncClientId {
@@ -198,6 +240,29 @@ export class SyncService {
       this.webrtc.reset();
     } else if (this.webrtc && typeof this.webrtc.close === 'function') {
       this.webrtc.close();
+    }
+    // Remove visibilitychange listener
+    if (this.visibilityListener) {
+      document.removeEventListener('visibilitychange', this.visibilityListener);
+      this.visibilityListener = null;
+    }
+  }
+
+  /**
+   * Called on tab resume/visibilitychange. Refreshes connection state and attempts reconnect if needed.
+   */
+  public refreshConnectionState() {
+    const state = this.webrtc.getConnectionState();
+    if (state.peerConnectionState === 'disconnected' || state.peerConnectionState === 'failed') {
+      this.connectionStatus = SyncConnectionStatus.Server_Failed;
+      // Optionally, could auto-retry here
+    } else if (state.dataChannelState === 'closed' || !state.hasDataChannel) {
+      this.connectionStatus = SyncConnectionStatus.NotConnected;
+    } else if (state.peerConnectionState === 'connected' && state.dataChannelState === 'open') {
+      // If everything is good, set to connected if not already
+      if (this.connectionStatus !== SyncConnectionStatus.Server_Connected && this.connectionStatus !== SyncConnectionStatus.Client_Connected) {
+        this.connectionStatus = SyncConnectionStatus.Server_Connected;
+      }
     }
   }
 }

@@ -233,4 +233,10 @@ export class WebRTCService {
       hasPeerConnection: !!this.peerConnection
     };
   }
+  /**
+   * Public getter for peerConnection (for connection state listeners in SyncService)
+   */
+  public getPeerConnection(): RTCPeerConnection | null {
+    return this.peerConnection;
+  }
 }
