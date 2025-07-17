@@ -21,7 +21,10 @@ export enum SyncConnectionStatus {
 @Injectable({ providedIn: 'root' })
 export class SyncService {
   /** Reference to ItemService for delta sync. Set by ItemService constructor. */
-  public itemService?: { itemDeltasSince(time: Date): any[] };
+  public itemService?: {
+    itemDeltasSince(time: Date): any[];
+    applyRemoteDeltas(deltas: any[]): void;
+  };
   static readonly DEVICE_ID_KEY = 'deviceId';
   static readonly LAST_SYNC_KEY = 'lastSync';
   static readonly FAKE_DEVICE_ID = 'FAKE_DEVICE_FOR_DISPLAY';
@@ -137,6 +140,9 @@ export class SyncService {
       }
       if (parsed && parsed.type === 'item-sync') {
         console.log('[SyncService][Server] Received item-sync:', parsed);
+        if (this.itemService && Array.isArray(parsed.deltas)) {
+          this.itemService.applyRemoteDeltas(parsed.deltas);
+        }
       }
       if (afterUpdate) afterUpdate();
     });
@@ -220,6 +226,9 @@ export class SyncService {
       }
       if (parsed && parsed.type === 'item-sync') {
         console.log('[SyncService][Client] Received item-sync:', parsed);
+        if (this.itemService && Array.isArray(parsed.deltas)) {
+          this.itemService.applyRemoteDeltas(parsed.deltas);
+        }
       }
       if (afterUpdate) afterUpdate();
     });

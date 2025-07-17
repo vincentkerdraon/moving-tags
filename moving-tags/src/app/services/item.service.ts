@@ -192,4 +192,55 @@ itemDeltasSince(time: Date): ItemDelta[] {
     localStorage.removeItem(ItemService.STORAGE_KEY);
     localStorage.removeItem(ItemService.DELTAS_KEY);
   }
+
+  /**
+   * Apply a list of remote deltas. For each entry, apply the change loosely.
+   * If deleting something that doesn't exist, ignore.
+   */
+  applyRemoteDeltas(deltas: any[]): void {
+    for (const delta of deltas) {
+      if (delta.action === ItemAction.remove) {
+        // Remove only if exists
+        const idx: number = this._items.findIndex((i: any) => i.id === delta.id);
+        if (idx !== -1) {
+          this._items.splice(idx, 1);
+        }
+      } else if (delta.action === ItemAction.add || delta.action === ItemAction.update) {
+        // Add or update item
+        const idx: number = this._items.findIndex((i: any) => i.id === delta.id);
+        if (idx !== -1) {
+          // Update existing item (merge fields loosely)
+          const item: any = this._items[idx];
+          if (delta.itemTagsAdded) item.itemTags = Array.from(new Set([...(item.itemTags || []), ...delta.itemTagsAdded]));
+          if (delta.itemTagsRemoved) item.itemTags = (item.itemTags || []).filter((t: any) => !delta.itemTagsRemoved.includes(t));
+          if (delta.checklistTagsAdded) item.checklistTags = Array.from(new Set([...(item.checklistTags || []), ...delta.checklistTagsAdded]));
+          if (delta.checklistTagsRemoved) item.checklistTags = (item.checklistTags || []).filter((t: any) => !delta.checklistTagsRemoved.includes(t));
+          if (delta.photosAdded) item.photos = Array.from(new Set([...(item.photos || []), ...delta.photosAdded]));
+          if (delta.photosRemoved) item.photos = (item.photos || []).filter((p: any) => !delta.photosRemoved.includes(p));
+          if (delta.weight !== undefined) item.weight = delta.weight;
+          if (delta.destination !== undefined) item.destination = delta.destination;
+        } else {
+          // Add new item if action is add
+          if (delta.action === ItemAction.add) {
+            this._items.push({
+              id: delta.id,
+              itemTags: delta.itemTagsAdded || [],
+              checklistTags: delta.checklistTagsAdded || [],
+              photos: delta.photosAdded || [],
+              ...(delta.weight !== undefined ? { weight: delta.weight } : {}),
+              ...(delta.destination !== undefined ? { destination: delta.destination } : {})
+            });
+          }
+        }
+      }
+      // Always add delta to deltas list if not present
+      if (!this._itemDeltas.some((d: any) => d.time.getTime() === new Date(delta.time).getTime() && d.id === delta.id && d.action === delta.action)) {
+        // Ensure time is a Date
+        delta.time = new Date(delta.time);
+        this._itemDeltas.push(delta);
+      }
+    }
+    this.rebuildTagSets();
+    this.persist();
+  }
 }
