@@ -18,6 +18,8 @@ export class ItemService {
   private static readonly DELTAS_KEY = 'itemDeltas';
 
   constructor(private imageService: ImageService, private syncService: SyncService) {
+    // Attach this ItemService instance to SyncService for sync callbacks
+    this.syncService.itemService = this;
     const storedItems = localStorage.getItem(ItemService.STORAGE_KEY);
     if (storedItems) {
       try {
@@ -30,6 +32,12 @@ export class ItemService {
     if (storedDeltas) {
       try {
         this._itemDeltas = JSON.parse(storedDeltas);
+        // Ensure all delta.time are Date objects
+        for (const delta of this._itemDeltas) {
+          if (delta.time && typeof delta.time === 'string') {
+            delta.time = new Date(delta.time);
+          }
+        }
       } catch {
         this._itemDeltas = [];
       }
@@ -52,9 +60,9 @@ export class ItemService {
     return this._itemDeltas;
   }
 
-  itemDeltasSince(time: Date): ItemDelta[] {
-    return this._itemDeltas.filter(delta => delta.time > time);
-  }
+itemDeltasSince(time: Date): ItemDelta[] {
+  return this._itemDeltas.filter(delta => delta.time> time);
+}
 
   /**
    * Save an item. Computes the diff, updates the item, and records the delta.

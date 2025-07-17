@@ -20,9 +20,11 @@ export enum SyncConnectionStatus {
 
 @Injectable({ providedIn: 'root' })
 export class SyncService {
+  /** Reference to ItemService for delta sync. Set by ItemService constructor. */
+  public itemService?: { itemDeltasSince(time: Date): any[] };
   static readonly DEVICE_ID_KEY = 'deviceId';
   static readonly LAST_SYNC_KEY = 'lastSync';
-  static readonly FAKE_CLIENT_ID = 'FAKE_CLIENT_FOR_DISPLAY';
+  static readonly FAKE_DEVICE_ID = 'FAKE_DEVICE_FOR_DISPLAY';
 
   public deviceId: SyncDeviceId;
   public lastSync: Record<SyncDeviceId, Date> = {};
@@ -126,6 +128,15 @@ export class SyncService {
       }
       if (parsed && parsed.type === 'lastSync') {
         console.log('[SyncService][Server] Received lastSync from', parsed.deviceId, 'for', parsed.forDevice, 'date:', parsed.lastSync);
+        // Send item deltas since lastSync to the requesting device
+        if (parsed.forDevice === this.deviceId && this.itemService) {
+          const since = new Date(parsed.lastSync);
+          const deltas = this.itemService.itemDeltasSince(since);
+          this.webrtc.sendMessage(JSON.stringify({ type: 'item-sync', deltas, from: this.deviceId, to: parsed.deviceId }));
+        }
+      }
+      if (parsed && parsed.type === 'item-sync') {
+        console.log('[SyncService][Server] Received item-sync:', parsed);
       }
       if (afterUpdate) afterUpdate();
     });
@@ -200,6 +211,15 @@ export class SyncService {
       }
       if (parsed && parsed.type === 'lastSync') {
         console.log('[SyncService][Client] Received lastSync from', parsed.deviceId, 'for', parsed.forDevice, 'date:', parsed.lastSync);
+        // Send item deltas since lastSync to the requesting device
+        if (parsed.forDevice === this.deviceId && this.itemService) {
+          const since = new Date(parsed.lastSync);
+          const deltas = this.itemService.itemDeltasSince(since);
+          this.webrtc.sendMessage(JSON.stringify({ type: 'item-sync', deltas, from: this.deviceId, to: parsed.deviceId }));
+        }
+      }
+      if (parsed && parsed.type === 'item-sync') {
+        console.log('[SyncService][Client] Received item-sync:', parsed);
       }
       if (afterUpdate) afterUpdate();
     });

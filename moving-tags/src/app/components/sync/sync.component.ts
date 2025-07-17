@@ -245,7 +245,7 @@ export class SyncComponent {
     const clients = new Set([
       ...this.itemService.itemDeltas.map(d => d.client),
       ...Object.keys(this.syncService.lastSync),
-      SyncService.FAKE_CLIENT_ID
+      SyncService.FAKE_DEVICE_ID
     ]);
     clients.delete(this.syncService.deviceId);
     return Array.from(clients);
