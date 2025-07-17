@@ -142,17 +142,16 @@ export class SyncService {
       if (!(parsed.deviceId in this.lastSync)) {
         this.updateLastSync(parsed.deviceId);
       }
-      
+      // Both client and server send lastSync for the peer deviceId after handshake
+      const lastSyncValue = this.lastSync[parsed.deviceId] instanceof Date ? 
+        this.lastSync[parsed.deviceId].toISOString() : this.lastSync[parsed.deviceId];
+      this.webrtc.sendMessage(JSON.stringify({ 
+        type: 'lastSync', 
+        deviceId: this.deviceId, 
+        forDevice: parsed.deviceId, 
+        lastSync: lastSyncValue 
+      }));
       if (role === 'Server') {
-        // Send our lastSync for this deviceId
-        const lastSyncValue = this.lastSync[parsed.deviceId] instanceof Date ? 
-          this.lastSync[parsed.deviceId].toISOString() : this.lastSync[parsed.deviceId];
-        this.webrtc.sendMessage(JSON.stringify({ 
-          type: 'lastSync', 
-          deviceId: this.deviceId, 
-          forDevice: parsed.deviceId, 
-          lastSync: lastSyncValue 
-        }));
         this.connectionStatus = SyncConnectionStatus.Server_Connected;
       } else {
         this.connectionStatus = SyncConnectionStatus.Client_Connected;
@@ -161,32 +160,37 @@ export class SyncService {
     
     if (parsed && parsed.type === 'lastSync') {
       console.log(`[SyncService][${role}] Received lastSync from`, parsed.deviceId, 'for', parsed.forDevice, 'date:', parsed.lastSync);
+      console.log(`[SyncService][${role}] Debug: parsed.forDevice=`, parsed.forDevice, 'this.deviceId=', this.deviceId, 'itemService exists:', !!this.itemService);
       // Send item deltas since lastSync to the requesting device
       if (parsed.forDevice === this.deviceId && this.itemService) {
+        console.log(`[SyncService][${role}] Condition met: Sending item-sync`);
         const since = new Date(parsed.lastSync);
         const deltas = this.itemService.itemDeltasSince(since);
         this.webrtc.sendMessage(JSON.stringify({ type: 'item-sync', deltas, from: this.deviceId, to: parsed.deviceId }));
-        
-        // Also send image-sync for any photosAdded
+
+        // Send one image-sync per photo, with a delay between each
         if (Array.isArray(deltas) && deltas.length > 0) {
           const allPhotoIds = deltas.flatMap((d: any) => d.photosAdded || []);
-          console.log(`[SyncService][${role}] Sending image-sync for photos:`, allPhotoIds);
+          console.log(`[SyncService][${role}] Scheduling image-sync for photos:`, allPhotoIds);
           const uniquePhotoIds = Array.from(new Set(allPhotoIds));
           if (uniquePhotoIds.length > 0) {
-            const photos = uniquePhotoIds
-              .map((uniquePhotoId: string) => {
+            uniquePhotoIds.forEach((uniquePhotoId: string, idx: number) => {
+              setTimeout(() => {
                 const data = this.imageService.getPhotoData(uniquePhotoId);
-                return data ? { id: uniquePhotoId, data } : null;
-              })
-              .filter((p: any) => p !== null);
-            const dc = this.dataChannel;
-            if (dc && dc.readyState === 'open') {
-              this.webrtc.sendMessage(JSON.stringify({ type: 'image-sync', photos, from: this.deviceId, to: parsed.deviceId }));
-            } else {
-              console.warn('[SyncService] Data channel not open, skipping image-sync send');
-            }
+                if (!data) return;
+                const dc = this.dataChannel;
+                if (dc && dc.readyState === 'open' && dc.bufferedAmount < 65536) {
+                  this.webrtc.sendMessage(JSON.stringify({ type: 'image-sync', photos: [{ id: uniquePhotoId, data }], from: this.deviceId, to: parsed.deviceId }));
+                  console.log(`[SyncService] image-sync sent for photo ${uniquePhotoId}`);
+                } else {
+                  console.warn('[SyncService] Data channel not open or buffer full, skipping image-sync send for', uniquePhotoId);
+                }
+              }, 2000 + idx * 500); // 2s initial delay, then 0.5s between each
+            });
           }
         }
+      } else {
+        console.warn(`[SyncService][${role}] Condition NOT met: Not sending item-sync. parsed.forDevice=`, parsed.forDevice, 'this.deviceId=', this.deviceId, 'itemService exists:', !!this.itemService);
       }
     }
     
