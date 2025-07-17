@@ -52,6 +52,10 @@ export class ItemService {
     return this._itemDeltas;
   }
 
+  itemDeltasSince(time: Date): ItemDelta[] {
+    return this._itemDeltas.filter(delta => delta.time > time);
+  }
+
   /**
    * Save an item. Computes the diff, updates the item, and records the delta.
    * Returns an error string if validation fails, otherwise void.

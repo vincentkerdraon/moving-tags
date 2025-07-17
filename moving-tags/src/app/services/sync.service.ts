@@ -119,7 +119,13 @@ export class SyncService {
           this.lastSync[parsed.deviceId] = new Date(0);
           localStorage.setItem(SyncService.LAST_SYNC_KEY, JSON.stringify(this.lastSync));
         }
+        // Send our lastSync for this deviceId
+        const lastSyncValue = this.lastSync[parsed.deviceId] instanceof Date ? this.lastSync[parsed.deviceId].toISOString() : this.lastSync[parsed.deviceId];
+        this.webrtc.sendMessage(JSON.stringify({ type: 'lastSync', deviceId: this.deviceId, forDevice: parsed.deviceId, lastSync: lastSyncValue }));
         this.connectionStatus = SyncConnectionStatus.Server_Connected;
+      }
+      if (parsed && parsed.type === 'lastSync') {
+        console.log('[SyncService][Server] Received lastSync from', parsed.deviceId, 'for', parsed.forDevice, 'date:', parsed.lastSync);
       }
       if (afterUpdate) afterUpdate();
     });
@@ -187,7 +193,13 @@ export class SyncService {
           this.lastSync[parsed.deviceId] = new Date(0);
           localStorage.setItem(SyncService.LAST_SYNC_KEY, JSON.stringify(this.lastSync));
         }
+        // Send our lastSync for this deviceId
+        const lastSyncValue = this.lastSync[parsed.deviceId] instanceof Date ? this.lastSync[parsed.deviceId].toISOString() : this.lastSync[parsed.deviceId];
+        this.webrtc.sendMessage(JSON.stringify({ type: 'lastSync', deviceId: this.deviceId, forDevice: parsed.deviceId, lastSync: lastSyncValue }));
         this.connectionStatus = SyncConnectionStatus.Client_Connected;
+      }
+      if (parsed && parsed.type === 'lastSync') {
+        console.log('[SyncService][Client] Received lastSync from', parsed.deviceId, 'for', parsed.forDevice, 'date:', parsed.lastSync);
       }
       if (afterUpdate) afterUpdate();
     });
