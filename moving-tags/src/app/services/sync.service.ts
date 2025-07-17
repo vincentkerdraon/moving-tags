@@ -114,64 +114,91 @@ export class SyncService {
     });
   }
 
-  private setupServerDataChannel(afterUpdate?: () => void) {
-    this.webrtc.onMessage(msg => {
-      let parsed: any;
-      try {
-        parsed = JSON.parse(msg);
-      } catch {}
-      if (parsed && parsed.type === 'deviceId') {
-        console.log('[SyncService][Server] Received peer deviceId:', parsed.deviceId);
-        if (!(parsed.deviceId in this.lastSync)) {
-          this.lastSync[parsed.deviceId] = new Date(0);
-          localStorage.setItem(SyncService.LAST_SYNC_KEY, JSON.stringify(this.lastSync));
-        }
-        // Send our lastSync for this deviceId
-        const lastSyncValue = this.lastSync[parsed.deviceId] instanceof Date ? this.lastSync[parsed.deviceId].toISOString() : this.lastSync[parsed.deviceId];
-        this.webrtc.sendMessage(JSON.stringify({ type: 'lastSync', deviceId: this.deviceId, forDevice: parsed.deviceId, lastSync: lastSyncValue }));
-        this.connectionStatus = SyncConnectionStatus.Server_Connected;
+  /**
+   * Common message handler for both server and client data channels.
+   * Handles deviceId handshake, lastSync exchange, item-sync, and image-sync messages.
+   */
+  private handleWebRTCMessage(msg: string, role: 'Server' | 'Client', afterUpdate?: () => void) {
+    let parsed: any;
+    try {
+      parsed = JSON.parse(msg);
+    } catch {}
+    
+    if (parsed && parsed.type === 'deviceId') {
+      console.log(`[SyncService][${role}] Received peer deviceId:`, parsed.deviceId);
+      if (!(parsed.deviceId in this.lastSync)) {
+        this.lastSync[parsed.deviceId] = new Date(0);
+        localStorage.setItem(SyncService.LAST_SYNC_KEY, JSON.stringify(this.lastSync));
       }
-      if (parsed && parsed.type === 'lastSync') {
-        console.log('[SyncService][Server] Received lastSync from', parsed.deviceId, 'for', parsed.forDevice, 'date:', parsed.lastSync);
-        // Send item deltas since lastSync to the requesting device
-        if (parsed.forDevice === this.deviceId && this.itemService) {
-          const since = new Date(parsed.lastSync);
-          const deltas = this.itemService.itemDeltasSince(since);
-          this.webrtc.sendMessage(JSON.stringify({ type: 'item-sync', deltas, from: this.deviceId, to: parsed.deviceId }));
-          // Also send image-sync for any photosAdded
-          if (Array.isArray(deltas) && deltas.length > 0) {
-            const allPhotoIds = deltas.flatMap((d: any) => d.photosAdded || []);
-            const uniquePhotoIds = Array.from(new Set(allPhotoIds));
-            if (uniquePhotoIds.length > 0) {
-              const photos = uniquePhotoIds
-                .map((uniquePhotoId: string) => {
-                  const data = this.imageService.getPhotoData(uniquePhotoId);
-                  return data ? { id: uniquePhotoId, data } : null;
-                })
-                .filter((p: any) => p !== null);
-              const dc = this.dataChannel;
-              if (dc && dc.readyState === 'open') {
-                this.webrtc.sendMessage(JSON.stringify({ type: 'image-sync', photos, from: this.deviceId, to: parsed.deviceId }));
-              } else {
-                console.warn('[SyncService] Data channel not open, skipping image-sync send');
-              }
+      
+      if (role === 'Server') {
+        // Send our lastSync for this deviceId
+        const lastSyncValue = this.lastSync[parsed.deviceId] instanceof Date ? 
+          this.lastSync[parsed.deviceId].toISOString() : this.lastSync[parsed.deviceId];
+        this.webrtc.sendMessage(JSON.stringify({ 
+          type: 'lastSync', 
+          deviceId: this.deviceId, 
+          forDevice: parsed.deviceId, 
+          lastSync: lastSyncValue 
+        }));
+        this.connectionStatus = SyncConnectionStatus.Server_Connected;
+      } else {
+        this.connectionStatus = SyncConnectionStatus.Client_Connected;
+      }
+    }
+    
+    if (parsed && parsed.type === 'lastSync') {
+      console.log(`[SyncService][${role}] Received lastSync from`, parsed.deviceId, 'for', parsed.forDevice, 'date:', parsed.lastSync);
+      // Send item deltas since lastSync to the requesting device
+      if (parsed.forDevice === this.deviceId && this.itemService) {
+        const since = new Date(parsed.lastSync);
+        const deltas = this.itemService.itemDeltasSince(since);
+        this.webrtc.sendMessage(JSON.stringify({ type: 'item-sync', deltas, from: this.deviceId, to: parsed.deviceId }));
+        
+        // Also send image-sync for any photosAdded
+        if (Array.isArray(deltas) && deltas.length > 0) {
+          const allPhotoIds = deltas.flatMap((d: any) => d.photosAdded || []);
+          console.log(`[SyncService][${role}] Sending image-sync for photos:`, allPhotoIds);
+          const uniquePhotoIds = Array.from(new Set(allPhotoIds));
+          if (uniquePhotoIds.length > 0) {
+            const photos = uniquePhotoIds
+              .map((uniquePhotoId: string) => {
+                const data = this.imageService.getPhotoData(uniquePhotoId);
+                return data ? { id: uniquePhotoId, data } : null;
+              })
+              .filter((p: any) => p !== null);
+            const dc = this.dataChannel;
+            if (dc && dc.readyState === 'open') {
+              this.webrtc.sendMessage(JSON.stringify({ type: 'image-sync', photos, from: this.deviceId, to: parsed.deviceId }));
+            } else {
+              console.warn('[SyncService] Data channel not open, skipping image-sync send');
             }
           }
         }
       }
-      if (parsed && parsed.type === 'item-sync') {
-        console.log('[SyncService][Server] Received item-sync:', parsed);
-        if (this.itemService && Array.isArray(parsed.deltas)) {
-          this.itemService.applyRemoteDeltas(parsed.deltas);
-        }
+    }
+    
+    if (parsed && parsed.type === 'item-sync') {
+      console.log(`[SyncService][${role}] Received item-sync:`, parsed);
+      if (this.itemService && Array.isArray(parsed.deltas)) {
+        this.itemService.applyRemoteDeltas(parsed.deltas);
       }
-      if (parsed && parsed.type === 'image-sync' && Array.isArray(parsed.photos)) {
-        console.log('[SyncService][Server] Received image-sync:', parsed);
-        this.imageService.syncPhoto(parsed.photos);
-      }
-      if (afterUpdate) afterUpdate();
+    }
+    
+    if (parsed && parsed.type === 'image-sync' && Array.isArray(parsed.photos)) {
+      console.log(`[SyncService][${role}] Received image-sync:`, parsed);
+      this.imageService.syncPhoto(parsed.photos);
+    }
+    
+    if (afterUpdate) afterUpdate();
+  }
+
+  private setupServerDataChannel(afterUpdate?: () => void) {
+    this.webrtc.onMessage(msg => {
+      this.handleWebRTCMessage(msg, 'Server', afterUpdate);
     });
     const dataChannel = this.webrtc.createDataChannel();
+    this.dataChannel = dataChannel;
     this.webrtc.setupDataChannel(dataChannel, () => {
       // Data channel open: send deviceId as handshake
       this.webrtc.sendMessage(JSON.stringify({ type: 'deviceId', deviceId: this.deviceId }));
@@ -219,60 +246,10 @@ export class SyncService {
    */
   private setupClientDataChannel(afterUpdate?: () => void) {
     this.webrtc.onMessage(msg => {
-      let parsed: any;
-      try {
-        parsed = JSON.parse(msg);
-      } catch {}
-      if (parsed && parsed.type === 'deviceId') {
-        console.log('[SyncService][Client] Received peer deviceId:', parsed.deviceId);
-        if (!(parsed.deviceId in this.lastSync)) {
-          this.lastSync[parsed.deviceId] = new Date(0);
-          localStorage.setItem(SyncService.LAST_SYNC_KEY, JSON.stringify(this.lastSync));
-        }
-        this.connectionStatus = SyncConnectionStatus.Client_Connected;
-      }
-      if (parsed && parsed.type === 'lastSync') {
-        console.log('[SyncService][Client] Received lastSync from', parsed.deviceId, 'for', parsed.forDevice, 'date:', parsed.lastSync);
-        // Send item deltas since lastSync to the requesting device
-        if (parsed.forDevice === this.deviceId && this.itemService) {
-          const since = new Date(parsed.lastSync);
-          const deltas = this.itemService.itemDeltasSince(since);
-          this.webrtc.sendMessage(JSON.stringify({ type: 'item-sync', deltas, from: this.deviceId, to: parsed.deviceId }));
-    this.dataChannel = dataChannel;
-          // Also send image-sync for any photosAdded
-          if (Array.isArray(deltas) && deltas.length > 0) {
-            const allPhotoIds = deltas.flatMap((d: any) => d.photosAdded || []);
-            const uniquePhotoIds = Array.from(new Set(allPhotoIds));
-            if (uniquePhotoIds.length > 0) {
-              const photos = uniquePhotoIds
-                .map((uniquePhotoId: string) => {
-                  const data = this.imageService.getPhotoData(uniquePhotoId);
-                  return data ? { id: uniquePhotoId, data } : null;
-                })
-                .filter((p: any) => p !== null);
-              const dc = this.dataChannel;
-              if (dc && dc.readyState === 'open') {
-                this.webrtc.sendMessage(JSON.stringify({ type: 'image-sync', photos, from: this.deviceId, to: parsed.deviceId }));
-              } else {
-                console.warn('[SyncService] Data channel not open, skipping image-sync send');
-              }
-            }
-          }
-        }
-      }
-      if (parsed && parsed.type === 'item-sync') {
-        console.log('[SyncService][Client] Received item-sync:', parsed);
-        if (this.itemService && Array.isArray(parsed.deltas)) {
-          this.itemService.applyRemoteDeltas(parsed.deltas);
-        }
-      }
-      if (parsed && parsed.type === 'image-sync' && Array.isArray(parsed.photos)) {
-        console.log('[SyncService][Client] Received image-sync:', parsed);
-        this.imageService.syncPhoto(parsed.photos);
-      }
-      if (afterUpdate) afterUpdate();
+      this.handleWebRTCMessage(msg, 'Client', afterUpdate);
     });
     const dataChannel = this.webrtc.createDataChannel();
+    this.dataChannel = dataChannel;
     this.webrtc.setupDataChannel(dataChannel, () => {
       // Data channel open for client: send deviceId as handshake
       this.webrtc.sendMessage(JSON.stringify({ type: 'deviceId', deviceId: this.deviceId }));
@@ -336,6 +313,11 @@ export class SyncService {
     }
   }
 
+  setLastSync(deviceId: SyncDeviceId, date: Date) {
+    this.lastSync[deviceId] = date;
+    localStorage.setItem(SyncService.LAST_SYNC_KEY, JSON.stringify(this.lastSync));
+  }
+
   /**
    * Called on tab resume/visibilitychange. Refreshes connection state and attempts reconnect if needed.
    */
@@ -353,66 +335,4 @@ export class SyncService {
       }
     }
   }
-  }
-
-  /**
-   * Listen to WebRTC connection state and update sync status accordingly.
-   * If connection is lost, set status to NotConnected or Failed.
-                const dc = this.dataChannel;
-                if (dc && dc.readyState === 'open') {
-    const checkState = () => {
-                } else {
-                  console.warn('[SyncService] Data channel not open, skipping image-sync send');
-                }
-      if (state.peerConnectionState === 'disconnected' || state.peerConnectionState === 'failed') {
-        this.connectionStatus = SyncConnectionStatus.Server_Failed;
-      } else if (state.dataChannelState === 'closed' || !state.hasDataChannel) {
-        this.connectionStatus = SyncConnectionStatus.NotConnected;
-      }
-    };
-    // Listen for connection state changes
-    this.dataChannel = dataChannel;
-    const pc = this.webrtc.getPeerConnection();
-    if (pc) {
-      pc.onconnectionstatechange = checkState;
-      pc.oniceconnectionstatechange = checkState;
-    }
-    // Also check immediately
-    checkState();
-  }
-
-  private generateDeviceId(): SyncDeviceId {
-    return Math.random().toString(36).slice(2) + Date.now().toString(36);
-  }
-
-  setLastSync(deviceId: SyncDeviceId, date: Date) {
-    this.lastSync[deviceId] = date;
-    localStorage.setItem(SyncService.LAST_SYNC_KEY, JSON.stringify(this.lastSync));
-  }
-
-  reset() {
-    this.showConnect = false;
-    this.connectionStarted = false;
-    this.connectionStatus = SyncConnectionStatus.NotConnected;
-    this.rawOffer = null;
-    this.qrData = null;
-    // Optionally clear lastSync, but keep clientId persistent
-    // this.lastSync = {};
-    // localStorage.removeItem(SyncService.LAST_SYNC_KEY);
-    if (this.webrtc && typeof this.webrtc.reset === 'function') {
-      this.webrtc.reset();
-    } else if (this.webrtc && typeof this.webrtc.close === 'function') {
-      this.webrtc.close();
-    }
-    // Remove visibilitychange listener
-    if (this.visibilityListener) {
-      document.removeEventListener('visibilitychange', this.visibilityListener);
-      this.visibilityListener = null;
-    }
-  }
-
-  /**
-   * Called on tab resume/visibilitychange. Refreshes connection state and attempts reconnect if needed.
-   */
-  // ...existing code...
-// End of SyncService class
+}
