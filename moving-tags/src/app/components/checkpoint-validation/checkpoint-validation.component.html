@@ -21,7 +21,10 @@
           Weight: <b>{{ popupItem.weight }} kg</b>
         </div>
         <div class="mb-2" *ngIf="popupItem.destination">
-          Destination: <b>{{ popupItem.destination }}</b>
+          Destination:
+          <span class="badge bg-warning text-dark border border-dark fs-6">{{
+            popupItem.destination
+          }}</span>
         </div>
         <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-2 mb-3">
           <ng-container *ngFor="let photoId of popupItem.photos">
@@ -41,11 +44,10 @@
               </div>
             </div>
           </ng-container>
-          <span *ngIf="!popupItem.photos.length" class="text-muted"
-            >(No photos)</span
-          >
         </div>
-        <div class="mb-2 d-flex gap-2 justify-content-center align-items-center" style="height: 42px">
+        <div
+          class="mb-2 d-flex gap-2 justify-content-center align-items-center"
+        >
           <button
             class="btn btn-lg btn-outline-secondary flex-fill"
             (click)="keep.emit()"
@@ -70,8 +72,10 @@
                 <div
                   class="progress-bar bg-success"
                   role="progressbar"
-                  [style.width.%]="popupPreventClose ? 0 : (100 - popupProgress)"
-                  [attr.aria-valuenow]="popupPreventClose ? 0 : (100 - popupProgress)"
+                  [style.width.%]="popupPreventClose ? 0 : 100 - popupProgress"
+                  [attr.aria-valuenow]="
+                    popupPreventClose ? 0 : 100 - popupProgress
+                  "
                   aria-valuemin="0"
                   aria-valuemax="100"
                   style="opacity: 0.3"
