@@ -1,7 +1,7 @@
 <div class="container mt-4">
   <h2>Sync Status</h2>
   <div class="text-muted small">
-    <strong>Your Client ID:</strong> {{ syncService.clientId }}
+    <strong>Your Device ID:</strong> {{ syncService.deviceId }}
   </div>
   <div class="mb-3">
     <strong>Status:</strong>
@@ -231,7 +231,7 @@
       <table class="table table-bordered mt-4">
         <thead>
           <tr>
-            <th>Client</th>
+            <th>Device</th>
             <th class="d-none d-md-table-cell">Last Sync</th>
             <th>Photos</th>
             <th>Changes</th>
@@ -242,7 +242,7 @@
             <td>
               <div>
                 {{
-                  client === syncService.clientId ? client + " (You)" : client
+                  client === syncService.deviceId ? client + " (You)" : client
                 }}
               </div>
               <div class="d-md-none text-muted small">

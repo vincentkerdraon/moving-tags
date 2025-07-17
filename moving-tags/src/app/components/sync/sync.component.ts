@@ -247,7 +247,7 @@ export class SyncComponent {
       ...Object.keys(this.syncService.lastSync),
       SyncService.FAKE_CLIENT_ID
     ]);
-    clients.delete(this.syncService.clientId);
+    clients.delete(this.syncService.deviceId);
     return Array.from(clients);
   }
 

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import { WebRTCService } from './webrtc.service';
 
-export type SyncClientId = string;
+export type SyncDeviceId = string;
 
 export enum SyncConnectionStatus {
   NotConnected = 'NOT_CONNECTED',
@@ -20,12 +20,12 @@ export enum SyncConnectionStatus {
 
 @Injectable({ providedIn: 'root' })
 export class SyncService {
-  static readonly CLIENT_ID_KEY = 'clientId';
+  static readonly DEVICE_ID_KEY = 'deviceId';
   static readonly LAST_SYNC_KEY = 'lastSync';
   static readonly FAKE_CLIENT_ID = 'FAKE_CLIENT_FOR_DISPLAY';
 
-  public clientId: SyncClientId;
-  public lastSync: Record<SyncClientId, Date> = {};
+  public deviceId: SyncDeviceId;
+  public lastSync: Record<SyncDeviceId, Date> = {};
 
   // --- SyncComponent stateful data ---
   public showConnect = false;
@@ -39,12 +39,12 @@ export class SyncService {
   constructor(
     public webrtc: WebRTCService
   ) {
-    const storedClientId = localStorage.getItem(SyncService.CLIENT_ID_KEY);
-    if (storedClientId) {
-      this.clientId = storedClientId;
+    const storedDeviceId = localStorage.getItem(SyncService.DEVICE_ID_KEY);
+    if (storedDeviceId) {
+      this.deviceId = storedDeviceId;
     } else {
-      this.clientId = this.generateClientId();
-      localStorage.setItem(SyncService.CLIENT_ID_KEY, this.clientId);
+      this.deviceId = this.generateDeviceId();
+      localStorage.setItem(SyncService.DEVICE_ID_KEY, this.deviceId);
     }
     const storedLastSync = localStorage.getItem(SyncService.LAST_SYNC_KEY);
     if (storedLastSync) {
@@ -113,10 +113,10 @@ export class SyncService {
       try {
         parsed = JSON.parse(msg);
       } catch {}
-      if (parsed && parsed.type === 'clientId') {
-        console.log('[SyncService][Server] Received peer clientId:', parsed.clientId);
-        if (!(parsed.clientId in this.lastSync)) {
-          this.lastSync[parsed.clientId] = new Date(0);
+      if (parsed && parsed.type === 'deviceId') {
+        console.log('[SyncService][Server] Received peer deviceId:', parsed.deviceId);
+        if (!(parsed.deviceId in this.lastSync)) {
+          this.lastSync[parsed.deviceId] = new Date(0);
           localStorage.setItem(SyncService.LAST_SYNC_KEY, JSON.stringify(this.lastSync));
         }
         this.connectionStatus = SyncConnectionStatus.Server_Connected;
@@ -125,8 +125,8 @@ export class SyncService {
     });
     const dataChannel = this.webrtc.createDataChannel();
     this.webrtc.setupDataChannel(dataChannel, () => {
-      // Data channel open: send clientId as handshake
-      this.webrtc.sendMessage(JSON.stringify({ type: 'clientId', clientId: this.clientId }));
+      // Data channel open: send deviceId as handshake
+      this.webrtc.sendMessage(JSON.stringify({ type: 'deviceId', deviceId: this.deviceId }));
       if (afterUpdate) afterUpdate();
     });
     this.setupConnectionStateListeners();
@@ -181,10 +181,10 @@ export class SyncService {
       try {
         parsed = JSON.parse(msg);
       } catch {}
-      if (parsed && parsed.type === 'clientId') {
-        console.log('[SyncService][Client] Received peer clientId:', parsed.clientId);
-        if (!(parsed.clientId in this.lastSync)) {
-          this.lastSync[parsed.clientId] = new Date(0);
+      if (parsed && parsed.type === 'deviceId') {
+        console.log('[SyncService][Client] Received peer deviceId:', parsed.deviceId);
+        if (!(parsed.deviceId in this.lastSync)) {
+          this.lastSync[parsed.deviceId] = new Date(0);
           localStorage.setItem(SyncService.LAST_SYNC_KEY, JSON.stringify(this.lastSync));
         }
         this.connectionStatus = SyncConnectionStatus.Client_Connected;
@@ -193,8 +193,8 @@ export class SyncService {
     });
     const dataChannel = this.webrtc.createDataChannel();
     this.webrtc.setupDataChannel(dataChannel, () => {
-      // Data channel open for client: send clientId as handshake
-      this.webrtc.sendMessage(JSON.stringify({ type: 'clientId', clientId: this.clientId }));
+      // Data channel open for client: send deviceId as handshake
+      this.webrtc.sendMessage(JSON.stringify({ type: 'deviceId', deviceId: this.deviceId }));
       if (afterUpdate) afterUpdate();
     });
 
@@ -224,12 +224,12 @@ export class SyncService {
     checkState();
   }
 
-  private generateClientId(): SyncClientId {
+  private generateDeviceId(): SyncDeviceId {
     return Math.random().toString(36).slice(2) + Date.now().toString(36);
   }
 
-  setLastSync(clientId: SyncClientId, date: Date) {
-    this.lastSync[clientId] = date;
+  setLastSync(deviceId: SyncDeviceId, date: Date) {
+    this.lastSync[deviceId] = date;
     localStorage.setItem(SyncService.LAST_SYNC_KEY, JSON.stringify(this.lastSync));
   }
 
