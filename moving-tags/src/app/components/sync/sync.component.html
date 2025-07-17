@@ -85,7 +85,7 @@
           (click)="processClientAnswer()"
           [disabled]="!serverAnswerInput"
         >
-          Finish Connection
+          Process answer
         </button>
       </div>
       <div class="col-md-6">
@@ -129,7 +129,7 @@
       <div class="row">
         <div class="col-md-6">
           <div class="mb-3">
-            <label for="offerInput" class="form-label">Paste JSON Offer</label>
+            <label for="offerInput" class="form-label">Paste offer</label>
             <input
               id="offerInput"
               type="text"
@@ -219,9 +219,10 @@
       </div>
       <button
         class="btn btn-outline-secondary btn-sm d-block mx-auto"
-        (click)="copyClientAnswer()"
+        (click)="copyToClipboard(compressAnswer(clientAnswer))"
+        [disabled]="!clientAnswer"
       >
-        Copy Code
+        Copy answer
       </button>
     </div>
   </div>

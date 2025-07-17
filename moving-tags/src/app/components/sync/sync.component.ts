@@ -3,6 +3,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ZXingScannerModule } from '@zxing/ngx-scanner';
+import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import { ImageService } from '../../services/image.service';
 import { ItemService } from '../../services/item.service';
 import { SyncConnectionStatus, SyncService } from '../../services/sync.service';
@@ -36,6 +37,11 @@ export class SyncComponent {
   forceSync() {
     this.syncService.triggerSync();
     this.cdr.detectChanges();
+  }
+
+  compressAnswer(answer: string | null): string {
+    if (!answer) return '';
+    return compressToEncodedURIComponent(answer);
   }
 
   confirmDeleteAll() {
@@ -82,50 +88,29 @@ export class SyncComponent {
   }
 
   copyRawOffer() {
-    if (this.syncService.rawOffer) {
-      console.log('[SyncComponent] Copying raw offer to clipboard:', this.syncService.rawOffer);
-
-      // Check if clipboard API is available
-      //FIXME create util func
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(this.syncService.rawOffer).then(() => {
-          console.log('[SyncComponent] Raw offer copied to clipboard successfully');
-          // TODO: Show success message to user
-        }).catch(err => {
-          console.error('[SyncComponent] Failed to copy to clipboard:', err);
-          if (this.syncService.rawOffer) {
-            this.fallbackCopyToClipboard(this.syncService.rawOffer);
-          }
-        });
-      } else {
-        console.warn('[SyncComponent] Clipboard API not available, using fallback');
-        if (this.syncService.rawOffer) {
-          this.fallbackCopyToClipboard(this.syncService.rawOffer);
-        }
-      }
+    if (this.syncService.qrData) {
+      this.copyToClipboard(this.syncService.qrData);
     }
   }
 
   copyClientAnswer() {
     if (this.clientAnswer) {
-      console.log('[SyncComponent] Copying client answer to clipboard:', this.clientAnswer);
+      this.copyToClipboard(this.clientAnswer);
+    }
+  }
 
-      // Check if clipboard API is available
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(this.clientAnswer).then(() => {
-          console.log('[SyncComponent] Client answer copied to clipboard successfully');
-        }).catch(err => {
-          console.error('[SyncComponent] Failed to copy client answer to clipboard:', err);
-          if (this.clientAnswer) {
-            this.fallbackCopyToClipboard(this.clientAnswer);
-          }
-        });
-      } else {
-        console.warn('[SyncComponent] Clipboard API not available, using fallback');
-        if (this.clientAnswer) {
-          this.fallbackCopyToClipboard(this.clientAnswer);
-        }
-      }
+  copyToClipboard(text: string) {
+    // Try modern clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        console.log('[SyncComponent] Copied to clipboard successfully');
+      }).catch(err => {
+        console.error('[SyncComponent] Failed to copy to clipboard:', err);
+        this.fallbackCopyToClipboard(text);
+      });
+    } else {
+      console.warn('[SyncComponent] Clipboard API not available, using fallback');
+      this.fallbackCopyToClipboard(text);
     }
   }
 
@@ -137,18 +122,16 @@ export class SyncComponent {
     textarea.style.opacity = '0';
     document.body.appendChild(textarea);
     textarea.select();
-
     try {
       const successful = document.execCommand('copy');
       if (successful) {
-        console.log('[SyncComponent] Raw offer copied using fallback method');
+        console.log('[SyncComponent] Copied to clipboard using fallback method');
       } else {
         console.error('[SyncComponent] Fallback copy failed');
       }
     } catch (err) {
       console.error('[SyncComponent] Fallback copy error:', err);
     }
-
     document.body.removeChild(textarea);
   }
 
@@ -206,7 +189,18 @@ export class SyncComponent {
   onProcessPastedOffer() {
     if (this.pastedOffer.trim()) {
       this.errorMessage = null; // Clear any previous errors
-      this.handleProcessOffer(this.pastedOffer.trim());
+      let data = this.pastedOffer.trim();
+      // Always try to decompress, and only proceed if valid JSON after decompress
+      let decompressed = decompressFromEncodedURIComponent(data);
+      if (decompressed) {
+        data = decompressed;
+      }
+      try {
+        JSON.parse(data); // Validate JSON before passing on
+        this.handleProcessOffer(data);
+      } catch (e) {
+        this.errorMessage = 'Invalid offer: please paste the code from the other device.';
+      }
     }
   }
 
@@ -238,12 +232,20 @@ export class SyncComponent {
 
   async processClientAnswer() {
     if (this.serverAnswerInput.trim()) {
+      let data = this.serverAnswerInput.trim();
+      // Always try to decompress, and only proceed if valid JSON after decompress
+      let decompressed = decompressFromEncodedURIComponent(data);
+      if (decompressed) {
+        data = decompressed;
+      }
       try {
+        JSON.parse(data); // Validate JSON before passing on
         console.log('[SyncComponent] Processing client answer via service...');
-        await this.syncService.processClientAnswerAsServer(this.serverAnswerInput.trim());
+        await this.syncService.processClientAnswerAsServer(data);
         this.cdr.detectChanges();
       } catch (error) {
         console.error('[SyncComponent] Failed to process client answer:', error);
+        this.errorMessage = 'Invalid answer: please paste the code from the other device.';
         this.syncService.connectionStatus = SyncConnectionStatus.Server_Failed;
         this.cdr.detectChanges();
       }

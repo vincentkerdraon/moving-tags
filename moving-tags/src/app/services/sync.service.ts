@@ -1,4 +1,4 @@
-  import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import { ImageService } from './image.service';
 import { WebRTCService } from './webrtc.service';
@@ -184,20 +184,20 @@ export class SyncService {
       console.warn(`[SyncService][${role}] Failed to parse WebRTC message:`, error);
       return;
     }
-    
+
     if (parsed && parsed.type === 'deviceId') {
       console.log(`[SyncService][${role}] Received peer deviceId:`, parsed.deviceId);
       if (!(parsed.deviceId in this.lastSync)) {
         this.updateLastSync(parsed.deviceId);
       }
       // Both client and server send lastSync for the peer deviceId after handshake
-      const lastSyncValue = this.lastSync[parsed.deviceId] instanceof Date ? 
+      const lastSyncValue = this.lastSync[parsed.deviceId] instanceof Date ?
         this.lastSync[parsed.deviceId].toISOString() : this.lastSync[parsed.deviceId];
-      this.webrtc.sendMessage(JSON.stringify({ 
-        type: 'lastSync', 
-        deviceId: this.deviceId, 
-        forDevice: parsed.deviceId, 
-        lastSync: lastSyncValue 
+      this.webrtc.sendMessage(JSON.stringify({
+        type: 'lastSync',
+        deviceId: this.deviceId,
+        forDevice: parsed.deviceId,
+        lastSync: lastSyncValue
       }));
       if (role === 'Server') {
         this.connectionStatus = SyncConnectionStatus.Server_Connected;
@@ -205,7 +205,7 @@ export class SyncService {
         this.connectionStatus = SyncConnectionStatus.Client_Connected;
       }
     }
-    
+
     if (parsed && parsed.type === 'lastSync') {
       console.log(`[SyncService][${role}] Received lastSync from`, parsed.deviceId, 'for', parsed.forDevice, 'date:', parsed.lastSync);
       console.log(`[SyncService][${role}] Debug: parsed.forDevice=`, parsed.forDevice, 'this.deviceId=', this.deviceId, 'itemService exists:', !!this.itemService);
@@ -241,19 +241,19 @@ export class SyncService {
         console.warn(`[SyncService][${role}] Condition NOT met: Not sending item-sync. parsed.forDevice=`, parsed.forDevice, 'this.deviceId=', this.deviceId, 'itemService exists:', !!this.itemService);
       }
     }
-    
+
     if (parsed && parsed.type === 'item-sync') {
       console.log(`[SyncService][${role}] Received item-sync:`, parsed);
       if (this.itemService && Array.isArray(parsed.deltas)) {
         this.itemService.applyRemoteDeltas(parsed.deltas);
       }
     }
-    
+
     if (parsed && parsed.type === 'image-sync' && Array.isArray(parsed.photos)) {
       console.log(`[SyncService][${role}] Received image-sync:`, parsed);
       this.imageService.syncPhoto(parsed.photos);
     }
-    
+
     if (afterUpdate) afterUpdate();
   }
 
@@ -283,7 +283,7 @@ export class SyncService {
       offerData = decompressFromEncodedURIComponent(data) || data;
     }
     const parsed = JSON.parse(offerData);
-    this.webrtc.createPeerConnection(() => {}, false);
+    this.webrtc.createPeerConnection(() => { }, false);
     await this.webrtc.setSignalingData(parsed);
     this.connectionStatus = SyncConnectionStatus.Client_CreatingAnswer;
     this.setupClientDataChannel(afterUpdate);
@@ -422,7 +422,7 @@ export class SyncService {
     } else if (state.peerConnectionState === 'connected' && state.dataChannelState === 'open') {
       // If everything is good, set to connected if not already
       if (this.connectionStatus !== SyncConnectionStatus.Server_Connected &&
-          this.connectionStatus !== SyncConnectionStatus.Client_Connected) {
+        this.connectionStatus !== SyncConnectionStatus.Client_Connected) {
         this.connectionStatus = this.syncRole === 'Server'
           ? SyncConnectionStatus.Server_Connected
           : SyncConnectionStatus.Client_Connected;
