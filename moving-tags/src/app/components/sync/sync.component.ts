@@ -1,3 +1,4 @@
+
 import { CommonModule, DatePipe } from '@angular/common';
 import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -15,6 +16,15 @@ import { WebrtcQrCodeComponent } from '../webrtc-qr-code/webrtc-qr-code.componen
   imports: [CommonModule, DatePipe,  WebrtcQrCodeComponent, ZXingScannerModule, FormsModule]
 })
 export class SyncComponent { 
+  confirmDeleteAll() {
+    if (confirm('Are you sure you want to delete ALL local data? This cannot be undone.')) {
+      this.syncService.reset();
+      this.itemService.reset();
+      this.imageService.reset();
+      this.mode = 'default';
+      this.errorMessage = null;
+    }
+  }
   mode: 'default' | 'server' | 'client' = 'default';
   scannedQr: string | null = null;
   pastedOffer: string = '';

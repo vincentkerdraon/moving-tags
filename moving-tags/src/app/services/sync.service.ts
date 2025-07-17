@@ -333,6 +333,8 @@ export class SyncService {
     this.connectionStatus = SyncConnectionStatus.NotConnected;
     this.rawOffer = null;
     this.qrData = null;
+    localStorage.removeItem(SyncService.DEVICE_ID_KEY);
+    localStorage.removeItem(SyncService.LAST_SYNC_KEY);
     // Optionally clear lastSync, but keep clientId persistent
     // this.lastSync = {};
     // localStorage.removeItem(SyncService.LAST_SYNC_KEY);
