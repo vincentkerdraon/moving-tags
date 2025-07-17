@@ -5,6 +5,11 @@ import { WebRTCService } from './webrtc.service';
 
 export type SyncDeviceId = string;
 
+export interface ItemServiceInterface {
+  itemDeltasSince(time: Date): any[];
+  applyRemoteDeltas(deltas: any[]): void;
+}
+
 export enum SyncConnectionStatus {
   NotConnected = 'NOT_CONNECTED',
   Server_GeneratingOffer = 'SERVER_GENERATING_OFFER',
@@ -18,21 +23,23 @@ export enum SyncConnectionStatus {
   Client_Connected = 'CLIENT_CONNECTED',
   Client_Failed = 'CLIENT_FAILED',
 }
+
 @Injectable({ providedIn: 'root' })
 export class SyncService {
-  /** Reference to ItemService for delta sync. Set by ItemService constructor. */
-  public itemService?: {
-    itemDeltasSince(time: Date): any[];
-    applyRemoteDeltas(deltas: any[]): void;
-  };
   static readonly DEVICE_ID_KEY = 'deviceId';
   static readonly LAST_SYNC_KEY = 'lastSync';
   static readonly FAKE_DEVICE_ID = 'FAKE_DEVICE_FOR_DISPLAY';
+  static readonly ICE_CANDIDATE_DELAY = 100; // ms
+  static readonly ICE_TIMEOUT = 3000; // ms
 
+  /** Reference to ItemService for delta sync. Set by ItemService constructor. */
+  public itemService?: ItemServiceInterface;
+
+  // Public state properties
   public deviceId: SyncDeviceId;
   public lastSync: Record<SyncDeviceId, Date> = {};
 
-  // --- SyncComponent stateful data ---
+  // SyncComponent stateful data
   public showConnect = false;
   public connectionStarted = false;
   public connectionStatus: SyncConnectionStatus = SyncConnectionStatus.NotConnected;
@@ -41,6 +48,10 @@ export class SyncService {
 
   private visibilityListener: (() => void) | null = null;
   private dataChannel?: RTCDataChannel;
+  /**
+   * Tracks the current sync role: 'Server' or 'Client'.
+   */
+  private syncRole: 'Server' | 'Client' | null = null;
 
   constructor(
     public webrtc: WebRTCService,
@@ -60,7 +71,9 @@ export class SyncService {
         for (const k in parsed) {
           this.lastSync[k] = new Date(parsed[k]);
         }
-      } catch {}
+      } catch (error) {
+        console.warn('[SyncService] Failed to parse stored lastSync data:', error);
+      }
     }
 
     // Listen for tab visibility changes to refresh/reconnect if needed
@@ -73,12 +86,11 @@ export class SyncService {
   }
 
   startServerConnection(afterUpdate?: () => void) {
+    this.syncRole = 'Server';
     this.connectionStarted = true;
     this.connectionStatus = SyncConnectionStatus.Server_GeneratingOffer;
     console.log('[SyncService] Starting WebRTC connection as server/initiator');
-    
     let iceCandidatesComplete = false;
-    
     this.webrtc.createPeerConnection((candidate) => {
       console.log('[SyncService][Server] ICE candidate:', candidate);
       // Generate QR code after getting some ICE candidates
@@ -90,13 +102,11 @@ export class SyncService {
           this.connectionStatus = SyncConnectionStatus.Server_WaitingForAnswer;
           console.log('[SyncService][Server] Updated QR data with ICE candidates:', raw);
           if (afterUpdate) afterUpdate();
-        }, 100); // Small delay to allow multiple candidates
+        }, SyncService.ICE_CANDIDATE_DELAY);
       }
     }, true);
-    
     this.setupServerDataChannel(afterUpdate);
     this.setupConnectionStateListeners();
-    
     this.webrtc.createOffer().then(() => {
       console.log('[SyncService][Server] Offer created, waiting for ICE candidates...');
       // Set a timeout to generate QR code even if no ICE candidates come
@@ -110,7 +120,7 @@ export class SyncService {
           if (afterUpdate) afterUpdate();
         }
         iceCandidatesComplete = true;
-      }, 3000); // Wait up to 3 seconds for ICE candidates
+      }, SyncService.ICE_TIMEOUT);
     });
   }
 
@@ -122,13 +132,15 @@ export class SyncService {
     let parsed: any;
     try {
       parsed = JSON.parse(msg);
-    } catch {}
+    } catch (error) {
+      console.warn(`[SyncService][${role}] Failed to parse WebRTC message:`, error);
+      return;
+    }
     
     if (parsed && parsed.type === 'deviceId') {
       console.log(`[SyncService][${role}] Received peer deviceId:`, parsed.deviceId);
       if (!(parsed.deviceId in this.lastSync)) {
-        this.lastSync[parsed.deviceId] = new Date(0);
-        localStorage.setItem(SyncService.LAST_SYNC_KEY, JSON.stringify(this.lastSync));
+        this.updateLastSync(parsed.deviceId);
       }
       
       if (role === 'Server') {
@@ -201,7 +213,7 @@ export class SyncService {
     this.dataChannel = dataChannel;
     this.webrtc.setupDataChannel(dataChannel, () => {
       // Data channel open: send deviceId as handshake
-      this.webrtc.sendMessage(JSON.stringify({ type: 'deviceId', deviceId: this.deviceId }));
+      this.sendDeviceIdHandshake();
       if (afterUpdate) afterUpdate();
     });
     this.setupConnectionStateListeners();
@@ -213,6 +225,7 @@ export class SyncService {
    * Returns a promise that resolves to the client answer string (for copying to server), or throws on error.
    */
   async processOfferDataAsClient(data: string, afterUpdate?: () => void): Promise<string> {
+    this.syncRole = 'Client';
     let offerData = data;
     if (data.startsWith('N4Ig') || data.includes('%')) {
       offerData = decompressFromEncodedURIComponent(data) || data;
@@ -233,11 +246,16 @@ export class SyncService {
     }
     throw new Error('No offer found in data');
   }
+  /**
+   * Process client answer (from input) as server.
+   * Handles signaling and connection state.
+   * Returns a promise that resolves when done, or throws on error.
+   */
   async processClientAnswerAsServer(data: string): Promise<void> {
     const answerData = JSON.parse(data);
     await this.webrtc.setSignalingData(answerData);
     if (this.connectionStatus !== SyncConnectionStatus.Server_Connected) {
-    this.connectionStatus = SyncConnectionStatus.Server_AnswerProcessed;
+      this.connectionStatus = SyncConnectionStatus.Server_AnswerProcessed;
     }
   }
 
@@ -252,7 +270,7 @@ export class SyncService {
     this.dataChannel = dataChannel;
     this.webrtc.setupDataChannel(dataChannel, () => {
       // Data channel open for client: send deviceId as handshake
-      this.webrtc.sendMessage(JSON.stringify({ type: 'deviceId', deviceId: this.deviceId }));
+      this.sendDeviceIdHandshake();
       if (afterUpdate) afterUpdate();
     });
 
@@ -267,7 +285,9 @@ export class SyncService {
     const checkState = () => {
       const state = this.webrtc.getConnectionState();
       if (state.peerConnectionState === 'disconnected' || state.peerConnectionState === 'failed') {
-        this.connectionStatus = SyncConnectionStatus.Server_Failed;
+        this.connectionStatus = this.syncRole === 'Server'
+          ? SyncConnectionStatus.Server_Failed
+          : SyncConnectionStatus.Client_Failed;
       } else if (state.dataChannelState === 'closed' || !state.hasDataChannel) {
         this.connectionStatus = SyncConnectionStatus.NotConnected;
       }
@@ -287,6 +307,21 @@ export class SyncService {
    */
   private generateDeviceId(): SyncDeviceId {
     return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
+
+  /**
+   * Helper method to send device ID handshake message.
+   */
+  private sendDeviceIdHandshake() {
+    this.webrtc.sendMessage(JSON.stringify({ type: 'deviceId', deviceId: this.deviceId }));
+  }
+
+  /**
+   * Helper method to update and persist lastSync data.
+   */
+  private updateLastSync(deviceId: SyncDeviceId, date: Date = new Date(0)) {
+    this.lastSync[deviceId] = date;
+    localStorage.setItem(SyncService.LAST_SYNC_KEY, JSON.stringify(this.lastSync));
   }
 
   /**
@@ -324,14 +359,19 @@ export class SyncService {
   public refreshConnectionState() {
     const state = this.webrtc.getConnectionState();
     if (state.peerConnectionState === 'disconnected' || state.peerConnectionState === 'failed') {
-      this.connectionStatus = SyncConnectionStatus.Server_Failed;
+      this.connectionStatus = this.syncRole === 'Server'
+        ? SyncConnectionStatus.Server_Failed
+        : SyncConnectionStatus.Client_Failed;
       // Optionally, could auto-retry here
     } else if (state.dataChannelState === 'closed' || !state.hasDataChannel) {
       this.connectionStatus = SyncConnectionStatus.NotConnected;
     } else if (state.peerConnectionState === 'connected' && state.dataChannelState === 'open') {
       // If everything is good, set to connected if not already
-      if (this.connectionStatus !== SyncConnectionStatus.Server_Connected && this.connectionStatus !== SyncConnectionStatus.Client_Connected) {
-        this.connectionStatus = SyncConnectionStatus.Server_Connected;
+      if (this.connectionStatus !== SyncConnectionStatus.Server_Connected &&
+          this.connectionStatus !== SyncConnectionStatus.Client_Connected) {
+        this.connectionStatus = this.syncRole === 'Server'
+          ? SyncConnectionStatus.Server_Connected
+          : SyncConnectionStatus.Client_Connected;
       }
     }
   }
