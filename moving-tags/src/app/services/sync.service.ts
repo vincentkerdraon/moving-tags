@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
+import { ImageService } from './image.service';
 import { WebRTCService } from './webrtc.service';
 
 export type SyncDeviceId = string;
@@ -15,9 +16,8 @@ export enum SyncConnectionStatus {
   Client_CreatingAnswer = 'CLIENT_CREATING_ANSWER',
   Client_AnswerCreated = 'CLIENT_ANSWER_CREATED',
   Client_Connected = 'CLIENT_CONNECTED',
-  Client_Failed = 'CLIENT_FAILED'
+  Client_Failed = 'CLIENT_FAILED',
 }
-
 @Injectable({ providedIn: 'root' })
 export class SyncService {
   /** Reference to ItemService for delta sync. Set by ItemService constructor. */
@@ -40,9 +40,11 @@ export class SyncService {
   public qrData: string | null = null;
 
   private visibilityListener: (() => void) | null = null;
+  private dataChannel?: RTCDataChannel;
 
   constructor(
-    public webrtc: WebRTCService
+    public webrtc: WebRTCService,
+    public imageService: ImageService,
   ) {
     const storedDeviceId = localStorage.getItem(SyncService.DEVICE_ID_KEY);
     if (storedDeviceId) {
@@ -136,6 +138,25 @@ export class SyncService {
           const since = new Date(parsed.lastSync);
           const deltas = this.itemService.itemDeltasSince(since);
           this.webrtc.sendMessage(JSON.stringify({ type: 'item-sync', deltas, from: this.deviceId, to: parsed.deviceId }));
+          // Also send image-sync for any photosAdded
+          if (Array.isArray(deltas) && deltas.length > 0) {
+            const allPhotoIds = deltas.flatMap((d: any) => d.photosAdded || []);
+            const uniquePhotoIds = Array.from(new Set(allPhotoIds));
+            if (uniquePhotoIds.length > 0) {
+              const photos = uniquePhotoIds
+                .map((uniquePhotoId: string) => {
+                  const data = this.imageService.getPhotoData(uniquePhotoId);
+                  return data ? { id: uniquePhotoId, data } : null;
+                })
+                .filter((p: any) => p !== null);
+              const dc = this.dataChannel;
+              if (dc && dc.readyState === 'open') {
+                this.webrtc.sendMessage(JSON.stringify({ type: 'image-sync', photos, from: this.deviceId, to: parsed.deviceId }));
+              } else {
+                console.warn('[SyncService] Data channel not open, skipping image-sync send');
+              }
+            }
+          }
         }
       }
       if (parsed && parsed.type === 'item-sync') {
@@ -143,6 +164,10 @@ export class SyncService {
         if (this.itemService && Array.isArray(parsed.deltas)) {
           this.itemService.applyRemoteDeltas(parsed.deltas);
         }
+      }
+      if (parsed && parsed.type === 'image-sync' && Array.isArray(parsed.photos)) {
+        console.log('[SyncService][Server] Received image-sync:', parsed);
+        this.imageService.syncPhoto(parsed.photos);
       }
       if (afterUpdate) afterUpdate();
     });
@@ -181,12 +206,6 @@ export class SyncService {
     }
     throw new Error('No offer found in data');
   }
-
-  /**
-   * Process client answer (from input) as server.
-   * Handles signaling and connection state.
-   * Returns a promise that resolves when done, or throws on error.
-   */
   async processClientAnswerAsServer(data: string): Promise<void> {
     const answerData = JSON.parse(data);
     await this.webrtc.setSignalingData(answerData);
@@ -210,9 +229,6 @@ export class SyncService {
           this.lastSync[parsed.deviceId] = new Date(0);
           localStorage.setItem(SyncService.LAST_SYNC_KEY, JSON.stringify(this.lastSync));
         }
-        // Send our lastSync for this deviceId
-        const lastSyncValue = this.lastSync[parsed.deviceId] instanceof Date ? this.lastSync[parsed.deviceId].toISOString() : this.lastSync[parsed.deviceId];
-        this.webrtc.sendMessage(JSON.stringify({ type: 'lastSync', deviceId: this.deviceId, forDevice: parsed.deviceId, lastSync: lastSyncValue }));
         this.connectionStatus = SyncConnectionStatus.Client_Connected;
       }
       if (parsed && parsed.type === 'lastSync') {
@@ -222,6 +238,26 @@ export class SyncService {
           const since = new Date(parsed.lastSync);
           const deltas = this.itemService.itemDeltasSince(since);
           this.webrtc.sendMessage(JSON.stringify({ type: 'item-sync', deltas, from: this.deviceId, to: parsed.deviceId }));
+    this.dataChannel = dataChannel;
+          // Also send image-sync for any photosAdded
+          if (Array.isArray(deltas) && deltas.length > 0) {
+            const allPhotoIds = deltas.flatMap((d: any) => d.photosAdded || []);
+            const uniquePhotoIds = Array.from(new Set(allPhotoIds));
+            if (uniquePhotoIds.length > 0) {
+              const photos = uniquePhotoIds
+                .map((uniquePhotoId: string) => {
+                  const data = this.imageService.getPhotoData(uniquePhotoId);
+                  return data ? { id: uniquePhotoId, data } : null;
+                })
+                .filter((p: any) => p !== null);
+              const dc = this.dataChannel;
+              if (dc && dc.readyState === 'open') {
+                this.webrtc.sendMessage(JSON.stringify({ type: 'image-sync', photos, from: this.deviceId, to: parsed.deviceId }));
+              } else {
+                console.warn('[SyncService] Data channel not open, skipping image-sync send');
+              }
+            }
+          }
         }
       }
       if (parsed && parsed.type === 'item-sync') {
@@ -229,6 +265,10 @@ export class SyncService {
         if (this.itemService && Array.isArray(parsed.deltas)) {
           this.itemService.applyRemoteDeltas(parsed.deltas);
         }
+      }
+      if (parsed && parsed.type === 'image-sync' && Array.isArray(parsed.photos)) {
+        console.log('[SyncService][Client] Received image-sync:', parsed);
+        this.imageService.syncPhoto(parsed.photos);
       }
       if (afterUpdate) afterUpdate();
     });
@@ -256,6 +296,82 @@ export class SyncService {
       }
     };
     // Listen for connection state changes
+    const pc = this.webrtc.getPeerConnection();
+    if (pc) {
+      pc.onconnectionstatechange = checkState;
+      pc.oniceconnectionstatechange = checkState;
+    }
+    // Also check immediately
+    checkState();
+  }
+
+  /**
+   * Generate a new device ID.
+   */
+  private generateDeviceId(): SyncDeviceId {
+    return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
+
+  /**
+   * Reset the sync service state.
+   */
+  public reset() {
+    this.showConnect = false;
+    this.connectionStarted = false;
+    this.connectionStatus = SyncConnectionStatus.NotConnected;
+    this.rawOffer = null;
+    this.qrData = null;
+    // Optionally clear lastSync, but keep clientId persistent
+    // this.lastSync = {};
+    // localStorage.removeItem(SyncService.LAST_SYNC_KEY);
+    if (this.webrtc && typeof this.webrtc.reset === 'function') {
+      this.webrtc.reset();
+    } else if (this.webrtc && typeof this.webrtc.close === 'function') {
+      this.webrtc.close();
+    }
+    // Remove visibilitychange listener
+    if (this.visibilityListener) {
+      document.removeEventListener('visibilitychange', this.visibilityListener);
+      this.visibilityListener = null;
+    }
+  }
+
+  /**
+   * Called on tab resume/visibilitychange. Refreshes connection state and attempts reconnect if needed.
+   */
+  public refreshConnectionState() {
+    const state = this.webrtc.getConnectionState();
+    if (state.peerConnectionState === 'disconnected' || state.peerConnectionState === 'failed') {
+      this.connectionStatus = SyncConnectionStatus.Server_Failed;
+      // Optionally, could auto-retry here
+    } else if (state.dataChannelState === 'closed' || !state.hasDataChannel) {
+      this.connectionStatus = SyncConnectionStatus.NotConnected;
+    } else if (state.peerConnectionState === 'connected' && state.dataChannelState === 'open') {
+      // If everything is good, set to connected if not already
+      if (this.connectionStatus !== SyncConnectionStatus.Server_Connected && this.connectionStatus !== SyncConnectionStatus.Client_Connected) {
+        this.connectionStatus = SyncConnectionStatus.Server_Connected;
+      }
+    }
+  }
+  }
+
+  /**
+   * Listen to WebRTC connection state and update sync status accordingly.
+   * If connection is lost, set status to NotConnected or Failed.
+                const dc = this.dataChannel;
+                if (dc && dc.readyState === 'open') {
+    const checkState = () => {
+                } else {
+                  console.warn('[SyncService] Data channel not open, skipping image-sync send');
+                }
+      if (state.peerConnectionState === 'disconnected' || state.peerConnectionState === 'failed') {
+        this.connectionStatus = SyncConnectionStatus.Server_Failed;
+      } else if (state.dataChannelState === 'closed' || !state.hasDataChannel) {
+        this.connectionStatus = SyncConnectionStatus.NotConnected;
+      }
+    };
+    // Listen for connection state changes
+    this.dataChannel = dataChannel;
     const pc = this.webrtc.getPeerConnection();
     if (pc) {
       pc.onconnectionstatechange = checkState;
@@ -298,18 +414,5 @@ export class SyncService {
   /**
    * Called on tab resume/visibilitychange. Refreshes connection state and attempts reconnect if needed.
    */
-  public refreshConnectionState() {
-    const state = this.webrtc.getConnectionState();
-    if (state.peerConnectionState === 'disconnected' || state.peerConnectionState === 'failed') {
-      this.connectionStatus = SyncConnectionStatus.Server_Failed;
-      // Optionally, could auto-retry here
-    } else if (state.dataChannelState === 'closed' || !state.hasDataChannel) {
-      this.connectionStatus = SyncConnectionStatus.NotConnected;
-    } else if (state.peerConnectionState === 'connected' && state.dataChannelState === 'open') {
-      // If everything is good, set to connected if not already
-      if (this.connectionStatus !== SyncConnectionStatus.Server_Connected && this.connectionStatus !== SyncConnectionStatus.Client_Connected) {
-        this.connectionStatus = SyncConnectionStatus.Server_Connected;
-      }
-    }
-  }
-}
+  // ...existing code...
+// End of SyncService class

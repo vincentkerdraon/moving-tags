@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+ import { Injectable } from '@angular/core';
 import { ChecklistTag, ClientId, DestinationTag, Item, ItemAction, ItemDelta, ItemTag } from '../models/data.models';
 import { ImageService } from './image.service';
 import { SyncService } from './sync.service';

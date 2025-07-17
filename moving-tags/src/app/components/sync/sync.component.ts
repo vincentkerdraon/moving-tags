@@ -69,6 +69,7 @@ export class SyncComponent {
       console.log('[SyncComponent] Copying raw offer to clipboard:', this.syncService.rawOffer);
       
       // Check if clipboard API is available
+      //FIXME create util func
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(this.syncService.rawOffer).then(() => {
           console.log('[SyncComponent] Raw offer copied to clipboard successfully');

@@ -29,6 +29,19 @@ export class ImageService {
   }
 
   /**
+   * Sync an array of photos (id, data) into the local photo store.
+   */
+  syncPhoto(photos: { id: PhotoId, data: string }[]): void {
+    for (const photo of photos) {
+      // Only add if not already present
+      if (!this._photos.some(p => p.id === photo.id)) {
+        this._photos.push({ id: photo.id, data: photo.data });
+      }
+    }
+    localStorage.setItem(ImageService.STORAGE_KEY, JSON.stringify(this._photos));
+  }
+
+  /**
    * Get the photo data (base64) for a given photo id.
    */
   getPhotoData(photoId: PhotoId): string | undefined {
