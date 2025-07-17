@@ -13,23 +13,14 @@ import { WebrtcQrCodeComponent } from '../webrtc-qr-code/webrtc-qr-code.componen
   selector: 'app-sync',
   templateUrl: './sync.component.html',
   standalone: true,
-  imports: [CommonModule, DatePipe,  WebrtcQrCodeComponent, ZXingScannerModule, FormsModule]
+  imports: [CommonModule, DatePipe, WebrtcQrCodeComponent, ZXingScannerModule, FormsModule]
 })
-export class SyncComponent { 
-  confirmDeleteAll() {
-    if (confirm('Are you sure you want to delete ALL local data? This cannot be undone.')) {
-      this.syncService.reset();
-      this.itemService.reset();
-      this.imageService.reset();
-      this.mode = 'default';
-      this.errorMessage = null;
-    }
-  }
+export class SyncComponent {
   mode: 'default' | 'server' | 'client' = 'default';
   scannedQr: string | null = null;
   pastedOffer: string = '';
   clientAnswer: string | null = null;
-  serverAnswerInput: string = ''; 
+  serverAnswerInput: string = '';
   errorMessage: string | null = null;
 
   public SyncConnectionStatus = SyncConnectionStatus;
@@ -40,7 +31,23 @@ export class SyncComponent {
     public imageService: ImageService,
     public webrtc: WebRTCService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
+
+  forceSync() {
+    this.syncService.triggerSync();
+    this.cdr.detectChanges();
+  }
+
+  confirmDeleteAll() {
+    if (confirm('Are you sure you want to delete ALL local data? This cannot be undone.')) {
+      this.syncService.reset();
+      this.itemService.reset();
+      this.imageService.reset();
+      this.mode = 'default';
+      this.errorMessage = null;
+      this.cdr.detectChanges();
+    }
+  }
 
   startServer() {
     this.mode = 'server';
@@ -77,7 +84,7 @@ export class SyncComponent {
   copyRawOffer() {
     if (this.syncService.rawOffer) {
       console.log('[SyncComponent] Copying raw offer to clipboard:', this.syncService.rawOffer);
-      
+
       // Check if clipboard API is available
       //FIXME create util func
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -102,7 +109,7 @@ export class SyncComponent {
   copyClientAnswer() {
     if (this.clientAnswer) {
       console.log('[SyncComponent] Copying client answer to clipboard:', this.clientAnswer);
-      
+
       // Check if clipboard API is available
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(this.clientAnswer).then(() => {
@@ -130,7 +137,7 @@ export class SyncComponent {
     textarea.style.opacity = '0';
     document.body.appendChild(textarea);
     textarea.select();
-    
+
     try {
       const successful = document.execCommand('copy');
       if (successful) {
@@ -141,7 +148,7 @@ export class SyncComponent {
     } catch (err) {
       console.error('[SyncComponent] Fallback copy error:', err);
     }
-    
+
     document.body.removeChild(textarea);
   }
 
@@ -213,18 +220,18 @@ export class SyncComponent {
     } catch (error) {
       console.error('[SyncComponent] Failed to process offer data:', error);
       this.syncService.connectionStatus = SyncConnectionStatus.Client_Failed;
-      
+
       // Set user-friendly error message
       if (error instanceof SyntaxError) {
         this.errorMessage = 'Invalid QR code content. Please scan the correct QR code from the server device.';
       } else {
         this.errorMessage = `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
       }
-      
+
       // Reset scan state to allow retry
       this.scannedQr = null;
       this.pastedOffer = '';
-      
+
       this.cdr.detectChanges();
     }
   }

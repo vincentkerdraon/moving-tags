@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+  import { Injectable } from '@angular/core';
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import { ImageService } from './image.service';
 import { WebRTCService } from './webrtc.service';
@@ -83,6 +83,54 @@ export class SyncService {
       }
     };
     document.addEventListener('visibilitychange', this.visibilityListener);
+  }
+
+  /**
+   * Triggers a sync: sends item deltas and images to the peer if connected.
+   */
+  public triggerSync() {
+    if (!this.itemService) return;
+    if (
+      this.connectionStatus !== SyncConnectionStatus.Server_Connected &&
+      this.connectionStatus !== SyncConnectionStatus.Client_Connected
+    ) {
+      return;
+    }
+    // Find the peer deviceId (the one that's not us)
+    const peerIds = Object.keys(this.lastSync).filter(id => id !== this.deviceId);
+    if (peerIds.length === 0) return;
+    // For each peer, send only deltas since lastSync
+    //and not send by this peer
+    peerIds.forEach(peerId => {
+      const since = this.lastSync[peerId] || new Date(0);
+      const deltas = this.itemService!.itemDeltasSince(since).filter(d => d.client != peerId);
+      if (deltas.length === 0) return;
+      this.webrtc.sendMessage(
+        JSON.stringify({ type: 'item-sync', deltas, from: this.deviceId, to: peerId })
+      );
+      // Send one image-sync per photo
+      const allPhotoIds = deltas.flatMap((d: any) => Array.isArray(d.photosAdded) ? d.photosAdded : []);
+      const uniquePhotoIds = Array.from(new Set(allPhotoIds));
+      if (uniquePhotoIds.length > 0) {
+        uniquePhotoIds.forEach((uniquePhotoId: string, idx: number) => {
+          setTimeout(() => {
+            const data = this.imageService.getPhotoData(uniquePhotoId);
+            if (!data) return;
+            const dc = this.dataChannel;
+            if (dc && dc.readyState === 'open' && dc.bufferedAmount < 65536) {
+              this.webrtc.sendMessage(
+                JSON.stringify({
+                  type: 'image-sync',
+                  photos: [{ id: uniquePhotoId, data }],
+                  from: this.deviceId,
+                  to: peerId,
+                })
+              );
+            }
+          }, 2000 + idx * 500);
+        });
+      }
+    });
   }
 
   startServerConnection(afterUpdate?: () => void) {

@@ -1,4 +1,5 @@
- import { Injectable } from '@angular/core';
+
+import { Injectable } from '@angular/core';
 import { ChecklistTag, ClientId, DestinationTag, Item, ItemAction, ItemDelta, ItemTag } from '../models/data.models';
 import { ImageService } from './image.service';
 import { SyncService } from './sync.service';
@@ -46,6 +47,8 @@ export class ItemService {
     // Rebuild tag sets after loading items from storage
     this.rebuildTagSets();
   }
+
+
 
   private persist() {
     localStorage.setItem(ItemService.STORAGE_KEY, JSON.stringify(this._items));
@@ -112,6 +115,7 @@ itemDeltasSince(time: Date): ItemDelta[] {
     this._itemDeltas.push(delta);
     this.rebuildTagSets(); // Rebuild tag sets after any item change
     this.persist();
+   this.syncService.triggerSync();
   }
 
   /**
@@ -138,6 +142,7 @@ itemDeltasSince(time: Date): ItemDelta[] {
       this._itemDeltas.push(delta);
       this.rebuildTagSets(); // Rebuild tag sets after item removal
       this.persist();
+   this.syncService.triggerSync();
     }
   }
 
