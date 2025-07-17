@@ -39,7 +39,7 @@ import { ZXingScannerModule } from '@zxing/ngx-scanner';
                 [torch]="false"
                 [enable]="true"
                 [tryHarder]="true"
-                [timeBetweenScans]="1000"
+                [timeBetweenScans]="500"
                 style="max-width: 100%; width: 100%;"
                 [style.visibility]="cameraReady ? 'visible' : 'hidden'"
               ></zxing-scanner>

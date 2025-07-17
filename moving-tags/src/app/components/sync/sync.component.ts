@@ -20,6 +20,7 @@ export class SyncComponent {
   pastedOffer: string = '';
   clientAnswer: string | null = null;
   serverAnswerInput: string = ''; 
+  errorMessage: string | null = null;
 
   public SyncConnectionStatus = SyncConnectionStatus;
 
@@ -135,12 +136,58 @@ export class SyncComponent {
 
   onQrCodeResult(result: string) {
     this.scannedQr = result;
+    this.errorMessage = null; // Clear any previous errors
     this.handleProcessOffer(result);
     this.cdr.detectChanges();
   }
 
+  onScanError(error: any) {
+    console.error('Sync QR Scanner: Scan error occurred:', error, typeof error, JSON.stringify(error, null, 2));
+    this.errorMessage = 'Unable to scan QR code. Make sure your camera is working and the QR code is clearly visible.';
+    this.cdr.detectChanges();
+  }
+
+  onScanFailure(error: any) {
+    // Don't log every scan failure as it's normal when no QR code is in view
+    // console.warn('Sync QR Scanner: Scan failure (no QR code detected):', error);
+  }
+
+  onScanComplete(result: any) {
+    console.log('Sync QR Scanner: Scan complete event:', result);
+  }
+
+  onCamerasFound(devices: any[]) {
+    console.log('Sync QR Scanner: Cameras found:', devices);
+    // Clear any camera-related error messages
+    if (this.errorMessage && (this.errorMessage.includes('camera') || this.errorMessage.includes('Camera'))) {
+      this.errorMessage = null;
+      this.cdr.detectChanges();
+    }
+  }
+
+  onCamerasNotFound() {
+    console.error('Sync QR Scanner: No cameras found');
+    this.errorMessage = 'No cameras found. Please check camera permissions and ensure your device has a camera.';
+    this.cdr.detectChanges();
+  }
+
+  onPermissionResponse(permission: boolean) {
+    console.log('Sync QR Scanner: Camera permission response:', permission);
+    if (!permission) {
+      this.errorMessage = 'Camera permission denied. Please allow camera access to scan QR codes.';
+      this.cdr.detectChanges();
+    } else {
+      // Clear permission-related error messages
+      if (this.errorMessage && this.errorMessage.includes('permission')) {
+        this.errorMessage = null;
+        this.cdr.detectChanges();
+      }
+    }
+  }
+
   onProcessPastedOffer() {
     if (this.pastedOffer.trim()) {
+      this.errorMessage = null; // Clear any previous errors
       this.handleProcessOffer(this.pastedOffer.trim());
     }
   }
@@ -150,10 +197,23 @@ export class SyncComponent {
       console.log('[SyncComponent] Processing offer data via service...');
       const clientAnswer = await this.syncService.processOfferDataAsClient(data, () => this.cdr.detectChanges());
       this.clientAnswer = clientAnswer;
+      this.errorMessage = null; // Clear error on success
       this.cdr.detectChanges();
     } catch (error) {
       console.error('[SyncComponent] Failed to process offer data:', error);
       this.syncService.connectionStatus = SyncConnectionStatus.Client_Failed;
+      
+      // Set user-friendly error message
+      if (error instanceof SyntaxError) {
+        this.errorMessage = 'Invalid QR code content. Please scan the correct QR code from the server device.';
+      } else {
+        this.errorMessage = `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      }
+      
+      // Reset scan state to allow retry
+      this.scannedQr = null;
+      this.pastedOffer = '';
+      
       this.cdr.detectChanges();
     }
   }
