@@ -197,48 +197,51 @@ itemDeltasSince(time: Date): ItemDelta[] {
    * Apply a list of remote deltas. For each entry, apply the change loosely.
    * If deleting something that doesn't exist, ignore.
    */
-  applyRemoteDeltas(deltas: any[]): void {
-    for (const delta of deltas) {
+  applyRemoteDeltas(deltas: ItemDelta[]): void {
+    for (const rawDelta of deltas) {
+      // Normalize delta fields (ensure time is Date)
+      const delta: ItemDelta = {
+        ...rawDelta,
+        time: rawDelta.time instanceof Date ? rawDelta.time : new Date(rawDelta.time),
+      };
+      // Skip if already exists locally (by id, time, and client)
+      if (this._itemDeltas.some(d => d.id === delta.id && d.client === delta.client && d.time.getTime() === delta.time.getTime())) {
+        continue;
+      }
       if (delta.action === ItemAction.remove) {
         // Remove only if exists
-        const idx: number = this._items.findIndex((i: any) => i.id === delta.id);
+        const idx = this._items.findIndex(i => i.id === delta.id);
         if (idx !== -1) {
           this._items.splice(idx, 1);
         }
       } else if (delta.action === ItemAction.add || delta.action === ItemAction.update) {
         // Add or update item
-        const idx: number = this._items.findIndex((i: any) => i.id === delta.id);
+        const idx = this._items.findIndex(i => i.id === delta.id);
         if (idx !== -1) {
           // Update existing item (merge fields loosely)
-          const item: any = this._items[idx];
-          if (delta.itemTagsAdded) item.itemTags = Array.from(new Set([...(item.itemTags || []), ...delta.itemTagsAdded]));
-          if (delta.itemTagsRemoved) item.itemTags = (item.itemTags || []).filter((t: any) => !delta.itemTagsRemoved.includes(t));
-          if (delta.checklistTagsAdded) item.checklistTags = Array.from(new Set([...(item.checklistTags || []), ...delta.checklistTagsAdded]));
-          if (delta.checklistTagsRemoved) item.checklistTags = (item.checklistTags || []).filter((t: any) => !delta.checklistTagsRemoved.includes(t));
-          if (delta.photosAdded) item.photos = Array.from(new Set([...(item.photos || []), ...delta.photosAdded]));
-          if (delta.photosRemoved) item.photos = (item.photos || []).filter((p: any) => !delta.photosRemoved.includes(p));
+          const item = this._items[idx];
+          if (delta.itemTagsAdded?.length) item.itemTags = Array.from(new Set([...(item.itemTags || []), ...delta.itemTagsAdded]));
+          if (delta.itemTagsRemoved?.length) item.itemTags = (item.itemTags || []).filter(t => !delta.itemTagsRemoved!.includes(t));
+          if (delta.checklistTagsAdded?.length) item.checklistTags = Array.from(new Set([...(item.checklistTags || []), ...delta.checklistTagsAdded]));
+          if (delta.checklistTagsRemoved?.length) item.checklistTags = (item.checklistTags || []).filter(t => !delta.checklistTagsRemoved!.includes(t));
+          if (delta.photosAdded?.length) item.photos = Array.from(new Set([...(item.photos || []), ...delta.photosAdded]));
+          if (delta.photosRemoved?.length) item.photos = (item.photos || []).filter(p => !delta.photosRemoved!.includes(p));
           if (delta.weight !== undefined) item.weight = delta.weight;
           if (delta.destination !== undefined) item.destination = delta.destination;
-        } else {
-          // Add new item if action is add
-          if (delta.action === ItemAction.add) {
-            this._items.push({
-              id: delta.id,
-              itemTags: delta.itemTagsAdded || [],
-              checklistTags: delta.checklistTagsAdded || [],
-              photos: delta.photosAdded || [],
-              ...(delta.weight !== undefined ? { weight: delta.weight } : {}),
-              ...(delta.destination !== undefined ? { destination: delta.destination } : {})
-            });
-          }
+        } else if (delta.action === ItemAction.add) {
+          // Add new item
+          this._items.push({
+            id: delta.id,
+            itemTags: delta.itemTagsAdded || [],
+            checklistTags: delta.checklistTagsAdded || [],
+            photos: delta.photosAdded || [],
+            ...(delta.weight !== undefined ? { weight: delta.weight } : {}),
+            ...(delta.destination !== undefined ? { destination: delta.destination } : {})
+          });
         }
       }
-      // Always add delta to deltas list if not present
-      if (!this._itemDeltas.some((d: any) => d.time.getTime() === new Date(delta.time).getTime() && d.id === delta.id && d.action === delta.action)) {
-        // Ensure time is a Date
-        delta.time = new Date(delta.time);
-        this._itemDeltas.push(delta);
-      }
+      // Add delta to deltas list
+      this._itemDeltas.push(delta);
     }
     this.rebuildTagSets();
     this.persist();
