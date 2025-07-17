@@ -15,13 +15,7 @@
         Switch to another checkpoint
       </button>
     </div>
-    <div class="alert alert-info mb-4" *ngIf="!checkpointId">
-      <strong>What is a Checkpoint?</strong><br />
-      Use this page to mark items as checked at a specific checkpoint or
-      location. Select or create a checkpoint tag above, then scan or enter item
-      IDs as you process them. Items will be tracked as "Remaining" or "Done"
-      for this checkpoint. You can undo or edit any item at any time.
-    </div>
+
     <app-input-id
       (submitId)="onSubmitId($event)"
       (scanQr)="onScanQr()"
@@ -89,6 +83,7 @@
       [popupPreventClose]="popupPreventClose"
       (keep)="preventPopupClose()"
       (close)="closePopup()"
+      (confirm)="onConfirmItem()"
       (edit)="onPopupEdit()"
     ></app-checkpoint-validation>
     <!-- Error popup for not found -->
@@ -135,6 +130,15 @@
     <div *ngIf="editingItem" class="modal-backdrop fade show"></div>
   </ng-container>
   <ng-template #selectTagBlock>
+    <div class="alert alert-info mb-4" *ngIf="!checkpointId">
+      <strong>What is a Checkpoint?</strong><br />
+      Use this page to mark items as checked at a specific checkpoint or
+      location. <br />Select or create a checkpoint tag, then scan or enter item
+      IDs as you process them. <br />Items will be tracked as "Remaining" or
+      "Done" for this checkpoint. <br />You can undo or edit any item at any
+      time.
+    </div>
+
     <div class="alert alert-info">
       Select or create a checkpoint tag to begin.
     </div>

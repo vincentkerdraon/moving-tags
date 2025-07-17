@@ -89,15 +89,20 @@ export class CheckpointComponent {
     this.popupStart = Date.now();
     const duration = 2500;
     
+    console.log('Starting countdown timer for', duration, 'ms');
+    
     this.popupInterval = setInterval(() => {
       if (!this.popupItem || this.popupPreventClose) return;
       const elapsed = Date.now() - this.popupStart;
       this.popupProgress = Math.max(0, 100 - (elapsed / duration) * 100);
+      console.log('Progress:', this.popupProgress.toFixed(1) + '%');
       this.cdr.detectChanges();
       
       if (this.popupProgress <= 0) {
         this.popupProgress = 0;
-        this.popupItem = null;
+        console.log('Auto-confirming item');
+        // Auto-confirm when timer expires
+        this.onConfirmItem();
         clearInterval(this.popupInterval);
         this.popupInterval = null;
         this.cdr.detectChanges();
@@ -107,12 +112,13 @@ export class CheckpointComponent {
 
   preventPopupClose() {
     this.popupPreventClose = true;
+    console.log('Timer paused by user');
     clearTimeout(this.popupTimeout);
     if (this.popupInterval) {
       clearInterval(this.popupInterval);
       this.popupInterval = null;
     }
-    this.popupProgress = 100;
+    this.popupProgress = 0; // Set progress to 0 when paused
     this.cdr.detectChanges();
   }
 
@@ -131,17 +137,16 @@ export class CheckpointComponent {
   onSubmitId(id: string) {
     if (!this.checkpointId) return;
     const item = this.items.find(i => i.id === id);
-    if (item && !item.checklistTags.includes(this.checkpointId)) {
-      const updated = { ...item, checklistTags: [...item.checklistTags, this.checkpointId] };
-      const err = this.itemService.save(updated);
-      if (err) {
-        // TODO: Use global error service if needed
-        this.popupError = err;
-        this.showPopup(null);
-        return;
-      }
+    if (!item) {
+      this.popupError = 'Item not found.';
+      this.showPopup(null);
+      return;
     }
-    this.showPopup(item || null);
+    
+    // Only show popup for remaining items
+    if (!item.checklistTags.includes(this.checkpointId)) {
+      this.showPopup(item);
+    }
   }
 
   onScanQr() {}
@@ -207,5 +212,20 @@ export class CheckpointComponent {
       this.closePopup();
       this.openEditModal(itemId);
     }
+  }
+
+  onConfirmItem() {
+    if (!this.popupItem || !this.checkpointId) return;
+    
+    const updated = { ...this.popupItem, checklistTags: [...this.popupItem.checklistTags, this.checkpointId] };
+    const err = this.itemService.save(updated);
+    if (err) {
+      this.popupError = err;
+      this.showPopup(null);
+      return;
+    }
+    
+    // Close the popup after successful confirmation
+    this.closePopup();
   }
 }

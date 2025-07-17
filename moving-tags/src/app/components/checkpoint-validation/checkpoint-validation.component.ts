@@ -17,6 +17,7 @@ export class CheckpointValidationComponent implements OnChanges {
   @Output() keep = new EventEmitter<void>();
   @Output() close = new EventEmitter<void>();
   @Output() edit = new EventEmitter<void>();
+  @Output() confirm = new EventEmitter<void>();
 
   keepClicked = false;
 
