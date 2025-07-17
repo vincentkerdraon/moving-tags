@@ -109,25 +109,24 @@ export class SyncService {
 
   private setupServerDataChannel(afterUpdate?: () => void) {
     this.webrtc.onMessage(msg => {
-      console.log('[SyncService][Server] Data channel message:', msg);
-      if (msg === 'pong') {
-        if (this.connectionStatus === SyncConnectionStatus.Server_AnswerProcessed) {
-          this.connectionStatus = SyncConnectionStatus.Server_Connected;
-          console.log('[SyncService][Server] Received pong, connection established.');
+      let parsed: any;
+      try {
+        parsed = JSON.parse(msg);
+      } catch {}
+      if (parsed && parsed.type === 'clientId') {
+        console.log('[SyncService][Server] Received peer clientId:', parsed.clientId);
+        if (!(parsed.clientId in this.lastSync)) {
+          this.lastSync[parsed.clientId] = new Date(0);
+          localStorage.setItem(SyncService.LAST_SYNC_KEY, JSON.stringify(this.lastSync));
         }
+        this.connectionStatus = SyncConnectionStatus.Server_Connected;
       }
       if (afterUpdate) afterUpdate();
     });
     const dataChannel = this.webrtc.createDataChannel();
     this.webrtc.setupDataChannel(dataChannel, () => {
-      // Data channel is open
-      if (this.connectionStatus === SyncConnectionStatus.Server_AnswerProcessed || this.connectionStatus === SyncConnectionStatus.Server_WaitingForAnswer) {
-        this.connectionStatus = SyncConnectionStatus.Server_Connected;
-        console.log('[SyncService][Server] Data channel opened, connection established.');
-      }
-      // Send a ping to validate the data connection
-      console.log('[SyncService][Server] Send ping to validate data connection.');
-      this.webrtc.sendMessage('ping');
+      // Data channel open: send clientId as handshake
+      this.webrtc.sendMessage(JSON.stringify({ type: 'clientId', clientId: this.clientId }));
       if (afterUpdate) afterUpdate();
     });
     this.setupConnectionStateListeners();
@@ -168,7 +167,9 @@ export class SyncService {
   async processClientAnswerAsServer(data: string): Promise<void> {
     const answerData = JSON.parse(data);
     await this.webrtc.setSignalingData(answerData);
+    if (this.connectionStatus !== SyncConnectionStatus.Server_Connected) {
     this.connectionStatus = SyncConnectionStatus.Server_AnswerProcessed;
+    }
   }
 
   /**
@@ -176,19 +177,24 @@ export class SyncService {
    */
   private setupClientDataChannel(afterUpdate?: () => void) {
     this.webrtc.onMessage(msg => {
-      console.log('[SyncService][Client] Data channel message:', msg);
-      if (msg === 'ping') {
-        if (this.connectionStatus === SyncConnectionStatus.Client_AnswerCreated) {
-          this.webrtc.sendMessage('pong');
-          console.log('[SyncService][Client] Received ping, sent pong, connection established.');
-          this.connectionStatus = SyncConnectionStatus.Client_Connected;
+      let parsed: any;
+      try {
+        parsed = JSON.parse(msg);
+      } catch {}
+      if (parsed && parsed.type === 'clientId') {
+        console.log('[SyncService][Client] Received peer clientId:', parsed.clientId);
+        if (!(parsed.clientId in this.lastSync)) {
+          this.lastSync[parsed.clientId] = new Date(0);
+          localStorage.setItem(SyncService.LAST_SYNC_KEY, JSON.stringify(this.lastSync));
         }
+        this.connectionStatus = SyncConnectionStatus.Client_Connected;
       }
       if (afterUpdate) afterUpdate();
     });
     const dataChannel = this.webrtc.createDataChannel();
     this.webrtc.setupDataChannel(dataChannel, () => {
-      // Data channel open for client
+      // Data channel open for client: send clientId as handshake
+      this.webrtc.sendMessage(JSON.stringify({ type: 'clientId', clientId: this.clientId }));
       if (afterUpdate) afterUpdate();
     });
 
