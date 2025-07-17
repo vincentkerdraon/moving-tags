@@ -8,11 +8,12 @@ import { ChecklistTagComponent } from '../checklist-tag/checklist-tag.component'
 import { CheckpointValidationComponent } from '../checkpoint-validation/checkpoint-validation.component';
 import { EditItemComponent } from '../edit-item/edit-item.component';
 import { InputIdComponent } from '../input-id/input-id.component';
+import { QrScannerComponent } from '../qr-scanner/qr-scanner.component';
 
 @Component({
   selector: 'app-checkpoint',
   standalone: true,
-  imports: [CommonModule, FormsModule, InputIdComponent, EditItemComponent, CheckpointValidationComponent, ChecklistTagComponent, ],
+  imports: [CommonModule, FormsModule, InputIdComponent, EditItemComponent, CheckpointValidationComponent, ChecklistTagComponent, QrScannerComponent],
   templateUrl: './checkpoint.component.html',
 })
 export class CheckpointComponent {
@@ -30,6 +31,7 @@ export class CheckpointComponent {
   editingItem: Item | null = null;
   popupError: string | null = null;
   tagInput: string = '';
+  showQrScanner = false;
 
   constructor(
     private cdr: ChangeDetectorRef,
@@ -88,19 +90,15 @@ export class CheckpointComponent {
     
     this.popupStart = Date.now();
     const duration = 2500;
-    
-    console.log('Starting countdown timer for', duration, 'ms');
-    
+        
     this.popupInterval = setInterval(() => {
       if (!this.popupItem || this.popupPreventClose) return;
       const elapsed = Date.now() - this.popupStart;
       this.popupProgress = Math.max(0, 100 - (elapsed / duration) * 100);
-      console.log('Progress:', this.popupProgress.toFixed(1) + '%');
       this.cdr.detectChanges();
       
       if (this.popupProgress <= 0) {
         this.popupProgress = 0;
-        console.log('Auto-confirming item');
         // Auto-confirm when timer expires
         this.onConfirmItem();
         clearInterval(this.popupInterval);
@@ -112,7 +110,6 @@ export class CheckpointComponent {
 
   preventPopupClose() {
     this.popupPreventClose = true;
-    console.log('Timer paused by user');
     clearTimeout(this.popupTimeout);
     if (this.popupInterval) {
       clearInterval(this.popupInterval);
@@ -135,21 +132,61 @@ export class CheckpointComponent {
   }
 
   onSubmitId(id: string) {
-    if (!this.checkpointId) return;
+    console.log('Checkpoint: onSubmitId called with:', id, 'Current checkpointId:', this.checkpointId);
+    
+    if (!this.checkpointId) {
+      //FIXME display error
+      console.warn('Checkpoint: No checkpointId set, returning');
+      return;
+    }
+    
     const item = this.items.find(i => i.id === id);
+    
     if (!item) {
-      this.popupError = 'Item not found.';
-      this.showPopup(null);
+      console.warn('Checkpoint: Item not found with ID:', id);
+      this.popupError = 'Item not found: ' + id;
+      //FIXME show error popup
+      // Don't call showPopup(null) as it overrides our specific error message
+      setTimeout(() => {
+        this.popupError = null;
+        this.cdr.detectChanges();
+      }, 3000); // Show error for 3 seconds
+      this.cdr.detectChanges();
       return;
     }
     
     // Only show popup for remaining items
-    if (!item.checklistTags.includes(this.checkpointId)) {
+    const hasChecklistTag = item.checklistTags.includes(this.checkpointId);
+    console.log('Checkpoint: Item has checkpoint tag:', hasChecklistTag);
+    
+    if (!hasChecklistTag) {
       this.showPopup(item);
+    } else {
+      console.log('Checkpoint: Item already has checkpoint tag, not showing popup');
+      //FIXME still show something
     }
   }
 
-  onScanQr() {}
+  onScanQr() {
+    this.showQrScanner = true;
+  }
+
+  onQrScanResult(result: string) {
+    console.log('Checkpoint: QR scan result received:', result, '(',typeof result,')');
+    this.showQrScanner = false;
+    // Process the scanned result as an item ID
+    if (result && result.trim()) {
+      const trimmedResult = result.trim();
+      this.onSubmitId(trimmedResult);
+    } else {
+      //FIXME show error
+      console.warn('Checkpoint: Empty or invalid QR result, not processing');
+    }
+  }
+
+  onQrScanClose() {
+    this.showQrScanner = false;
+  }
 
   onItemClick(id: string) {
     // Only process clicks for remaining items, not done items

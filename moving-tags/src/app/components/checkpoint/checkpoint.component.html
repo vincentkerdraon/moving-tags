@@ -178,4 +178,11 @@
       </div>
     </div>
   </ng-template>
+
+  <!-- QR Scanner Modal -->
+  <app-qr-scanner
+    *ngIf="showQrScanner"
+    (scanResult)="onQrScanResult($event)"
+    (close)="onQrScanClose()"
+  ></app-qr-scanner>
 </div>

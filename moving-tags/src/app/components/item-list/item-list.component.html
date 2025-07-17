@@ -132,4 +132,11 @@
     </div>
   </div>
   <div *ngIf="editingItem" class="modal-backdrop fade show"></div>
+
+  <!-- QR Scanner Modal -->
+  <app-qr-scanner
+    *ngIf="showQrScanner"
+    (scanResult)="onQrScanResult($event)"
+    (close)="onQrScanClose()"
+  ></app-qr-scanner>
 </div>

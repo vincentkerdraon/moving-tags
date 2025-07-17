@@ -9,7 +9,7 @@ import { QRCodeComponent } from 'angularx-qrcode';
   template: `
     <div class="d-flex flex-column align-items-center position-relative">
       <div *ngIf="contact" class="text-center small text-muted position-absolute" style="top: -0px; left: 50%; transform: translateX(-50%);width:145px">{{ contact }}</div>
-      <qrcode [qrdata]="id" [width]="145" [errorCorrectionLevel]="'M'"></qrcode>
+      <qrcode [qrdata]="id" [width]="145" [errorCorrectionLevel]="'Q'"></qrcode>
       <div class="text-center  qr-label">
         <span *ngIf="idPrefix" class="text-secondary small text-muted ">{{ idPrefix }}:</span>{{ id }}
       </div>

@@ -5,11 +5,12 @@ import { Item } from '../../models/data.models';
 import { ItemService } from '../../services/item.service';
 import { DestinationTagComponent } from '../destination-tag/destination-tag.component';
 import { EditItemComponent } from '../edit-item/edit-item.component';
+import { QrScannerComponent } from '../qr-scanner/qr-scanner.component';
 
 @Component({
   selector: 'app-item-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, EditItemComponent, DestinationTagComponent],
+  imports: [CommonModule, FormsModule, EditItemComponent, DestinationTagComponent, QrScannerComponent],
   templateUrl: './item-list.component.html'
 })
 export class ItemListComponent {
@@ -20,6 +21,7 @@ export class ItemListComponent {
 
   editingItem: Item | null = null;
   newItemId = '';
+  showQrScanner = false;
 
   constructor(public itemService: ItemService) {}
 
@@ -44,7 +46,19 @@ export class ItemListComponent {
   }
 
   onScanQr() {
-    this.scanQr.emit();
+    this.showQrScanner = true;
+  }
+
+  onQrScanResult(result: string) {
+    this.showQrScanner = false;
+    if (result && result.trim()) {
+      this.newItemId = result.trim();
+      this.onCreateNewItem();
+    }
+  }
+
+  onQrScanClose() {
+    this.showQrScanner = false;
   }
 
   onSearch() {
