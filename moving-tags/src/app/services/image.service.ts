@@ -53,11 +53,11 @@ export class ImageService {
    */
   async processImage(file: File): Promise<string> {
     const options = {
-      maxWidthOrHeight: 1024,
+      maxWidthOrHeight: 800,
       useWebWorker: true,
-      maxSizeMB: 0.5,
+      maxSizeMB: 0.05,
       fileType: 'image/jpeg',
-      initialQuality: 0.8,
+      initialQuality: 0.6,
       exifOrientation: 1 // auto
     };
     const compressedFile = await imageCompression(file, options);
