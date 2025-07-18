@@ -1,12 +1,12 @@
-
 import { CommonModule, DatePipe } from '@angular/common';
-import { ChangeDetectorRef, Component } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { BarcodeFormat } from '@zxing/library';
 import { ZXingScannerModule } from '@zxing/ngx-scanner';
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import { ImageService } from '../../services/image.service';
 import { ItemService } from '../../services/item.service';
-import { SyncConnectionStatus, SyncService } from '../../services/sync.service';
+import { SyncService } from '../../services/sync.service';
 import { WebRTCService } from '../../services/webrtc.service';
 import { WebrtcQrCodeComponent } from '../webrtc-qr-code/webrtc-qr-code.component';
 
@@ -16,15 +16,19 @@ import { WebrtcQrCodeComponent } from '../webrtc-qr-code/webrtc-qr-code.componen
   standalone: true,
   imports: [CommonModule, DatePipe, WebrtcQrCodeComponent, ZXingScannerModule, FormsModule]
 })
-export class SyncComponent {
+export class SyncComponent implements OnInit {
   mode: 'default' | 'server' | 'client' = 'default';
   scannedQr: string | null = null;
   pastedOffer: string = '';
   clientAnswer: string | null = null;
   serverAnswerInput: string = '';
   errorMessage: string | null = null;
+  isConnected = false;
 
-  public SyncConnectionStatus = SyncConnectionStatus;
+  // UI state for QR codes and connection
+  qrCodeData: string = '';
+
+  allowedFormats = [BarcodeFormat.QR_CODE];
 
   constructor(
     public syncService: SyncService,
@@ -34,62 +38,175 @@ export class SyncComponent {
     private cdr: ChangeDetectorRef
   ) { }
 
+  ngOnInit() {
+    console.log('[SyncComponent] Initializing...');
+
+    // Initialize services
+    this.syncService.initialize();
+    this.webrtc.initialize();
+
+    // Listen for connection state changes
+    this.webrtc.onConnectionState((connected) => {
+      this.isConnected = connected;
+      console.log('[SyncComponent] Connection state changed:', connected);
+      this.cdr.detectChanges();
+    });
+
+    // Check current connection state
+    this.isConnected = this.webrtc.isConnectionHealthy();
+  }
+
+  // === Core Actions ===
+
   forceSync() {
     this.syncService.triggerSync();
     this.cdr.detectChanges();
   }
+
+  forceReconnect() {
+    this.webrtc.forceReconnect();
+  }
+
+  // === Server Mode ===
+
+  startServer() {
+    console.log('[SyncComponent] Starting server...');
+    this.mode = 'server';
+    this.errorMessage = null;
+
+    this.webrtc.startAsServer((offerString) => {
+      // Compress the offer for QR code
+      this.qrCodeData = compressToEncodedURIComponent(offerString);
+      console.log('[SyncComponent] Server offer ready, QR data generated');
+      this.cdr.detectChanges();
+    });
+  }
+
+  // === Client Mode ===
+
+  connectToServer() {
+    this.mode = 'client';
+    this.errorMessage = null;
+  }
+
+  async onProcessPastedOffer() {
+    try {
+      let offerData = this.pastedOffer.trim();
+
+      // Check if offer data is JSON directly
+      if (!offerData.startsWith('{')) {
+        const decompressed = decompressFromEncodedURIComponent(offerData);
+        if (decompressed) {
+          offerData = decompressed;
+        } else {
+          throw new Error('Failed to decompress offer data');
+        }
+      }
+
+      try {
+        JSON.parse(offerData);
+      } catch (error) {
+        throw new Error('Invalid JSON format in offer data');
+      }
+
+      // Connect as client and get answer
+      const answerString = await this.webrtc.connectAsClient(offerData, (answer) => {
+        this.clientAnswer = answer;
+        console.log('[SyncComponent] Client answer ready');
+        this.cdr.detectChanges();
+      });
+
+      this.clientAnswer = answerString;
+      this.cdr.detectChanges();
+
+    } catch (error) {
+      console.error('[SyncComponent] Error processing offer:', error);
+      const errorMessage = (error instanceof Error) ? error.message : 'Unknown error';
+      this.errorMessage = `Failed to process offer: ${errorMessage}`;
+      this.cdr.detectChanges();
+    }
+  }
+
+  async onProcessServerAnswer() {
+    try {
+      const compressedAnswer = this.serverAnswerInput.trim();
+
+      // Decompress the answer
+      const answerData = decompressFromEncodedURIComponent(compressedAnswer);
+      if (!answerData) {
+        throw new Error('Failed to decompress answer data');
+      }
+
+      // Process the decompressed answer
+      await this.webrtc.processAnswer(answerData);
+
+      console.log('[SyncComponent] Server processed answer successfully');
+      this.cdr.detectChanges();
+
+    } catch (error) {
+      console.error('[SyncComponent] Error processing answer:', error);
+      const errorMessage = (error instanceof Error) ? error.message : 'Unknown error';
+      this.errorMessage = `Failed to process answer: ${errorMessage}`;
+      this.cdr.detectChanges();
+    }
+  }
+
+  // === QR Code Scanning ===
+
+  onQrCodeResult(result: string) {
+    console.log('[SyncComponent] QR code scanned:', result);
+    this.scannedQr = result;
+    this.pastedOffer = result;
+    this.onProcessPastedOffer();
+  }
+
+  // === Utility Methods ===
 
   compressAnswer(answer: string | null): string {
     if (!answer) return '';
     return compressToEncodedURIComponent(answer);
   }
 
-  confirmDeleteAll() {
-    if (confirm('Are you sure you want to delete ALL local data? This cannot be undone.')) {
-      this.syncService.reset();
-      this.itemService.reset();
-      this.imageService.reset();
-      this.mode = 'default';
-      this.errorMessage = null;
-      this.cdr.detectChanges();
+  copyToClipboard(text: string) {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(() => {
+        console.log('[SyncComponent] Copied to clipboard via Clipboard API');
+      }).catch(err => {
+        console.error('[SyncComponent] Failed to copy via Clipboard API:', err);
+        this.fallbackCopyToClipboard(text);
+      });
+    } else {
+      this.fallbackCopyToClipboard(text);
     }
   }
 
-  startServer() {
-    this.mode = 'server';
-    this.syncService.showConnect = true;
-    if (!this.syncService.connectionStarted) {
-      this.syncService.startServerConnection(() => this.cdr.detectChanges());
+  private fallbackCopyToClipboard(text: string) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        console.log('[SyncComponent] Copied to clipboard via fallback method');
+      } else {
+        console.error('[SyncComponent] Failed to copy via fallback method');
+      }
+    } catch (err) {
+      console.error('[SyncComponent] Error in fallback copy:', err);
     }
+
+    document.body.removeChild(textArea);
   }
 
-  connectToServer() {
-    this.mode = 'client';
-    this.syncService.showConnect = true;
-    // Placeholder: implement QR scan logic here
-  }
-
-  cancelSync() {
-    this.mode = 'default';
-    this.syncService.showConnect = false;
-    this.syncService.reset();
-    this.webrtc.reset();
-    this.scannedQr = null;
-    this.pastedOffer = '';
-    this.clientAnswer = null;
-    this.serverAnswerInput = '';
-  }
-
-  onShowConnect() {
-    this.syncService.showConnect = !this.syncService.showConnect;
-    if (this.syncService.showConnect && !this.syncService.connectionStarted) {
-      this.syncService.startServerConnection(() => this.cdr.detectChanges());
-    }
-  }
-
-  copyRawOffer() {
-    if (this.syncService.qrData) {
-      this.copyToClipboard(this.syncService.qrData);
+  copyQrData() {
+    if (this.qrCodeData) {
+      this.copyToClipboard(this.qrCodeData);
     }
   }
 
@@ -99,214 +216,88 @@ export class SyncComponent {
     }
   }
 
-  copyToClipboard(text: string) {
-    // Try modern clipboard API first
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(() => {
-        console.log('[SyncComponent] Copied to clipboard successfully');
-      }).catch(err => {
-        console.error('[SyncComponent] Failed to copy to clipboard:', err);
-        this.fallbackCopyToClipboard(text);
-      });
+  copyCompressedAnswer() {
+    if (this.clientAnswer) {
+      const compressed = this.compressAnswer(this.clientAnswer);
+      this.copyToClipboard(compressed);
+    }
+  }
+
+  // === Reset and Cleanup ===
+
+  cancelSync() {
+    console.log('[SyncComponent] Canceling sync');
+    this.mode = 'default';
+    this.qrCodeData = '';
+    this.clientAnswer = null;
+    this.errorMessage = null;
+    this.pastedOffer = '';
+    this.serverAnswerInput = '';
+    this.scannedQr = null;
+    this.webrtc.close();
+    this.cdr.detectChanges();
+  }
+
+  confirmDeleteAll() {
+    if (confirm('Are you sure you want to delete ALL local data? This cannot be undone.')) {
+      console.log('[SyncComponent] Deleting all local data');
+      this.syncService.reset();
+      this.itemService.reset();
+      this.imageService.reset();
+      this.webrtc.reset();
+      this.cancelSync();
+    }
+  }
+
+  // === Status Helpers ===
+
+  getConnectionStatus(): string {
+    if (this.isConnected) {
+      return 'Connected';
+    } else if (this.webrtc.getConnectionState().peerConnectionState === 'connecting') {
+      return 'Connecting...';
+    } else if (this.mode === 'server' && this.qrCodeData) {
+      return 'Waiting for client';
+    } else if (this.mode === 'client' && this.clientAnswer) {
+      return 'Waiting for server';
     } else {
-      console.warn('[SyncComponent] Clipboard API not available, using fallback');
-      this.fallbackCopyToClipboard(text);
+      return 'Not connected';
     }
   }
 
-  private fallbackCopyToClipboard(text: string) {
-    // Create a temporary textarea element
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.style.position = 'fixed';
-    textarea.style.opacity = '0';
-    document.body.appendChild(textarea);
-    textarea.select();
-    try {
-      const successful = document.execCommand('copy');
-      if (successful) {
-        console.log('[SyncComponent] Copied to clipboard using fallback method');
-      } else {
-        console.error('[SyncComponent] Fallback copy failed');
-      }
-    } catch (err) {
-      console.error('[SyncComponent] Fallback copy error:', err);
-    }
-    document.body.removeChild(textarea);
+  canSync(): boolean {
+    return this.isConnected;
   }
 
-  onQrCodeResult(result: string) {
-    this.scannedQr = result;
-    this.errorMessage = null; // Clear any previous errors
-    this.handleProcessOffer(result);
-    this.cdr.detectChanges();
+  canShowQr(): boolean {
+    return this.mode === 'server' && !!this.qrCodeData;
   }
 
-  onScanError(error: any) {
-    console.error('Sync QR Scanner: Scan error occurred:', error, typeof error, JSON.stringify(error, null, 2));
-    this.errorMessage = 'Unable to scan QR code. Make sure your camera is working and the QR code is clearly visible.';
-    this.cdr.detectChanges();
+  canCopyAnswer(): boolean {
+    return this.mode === 'client' && !!this.clientAnswer;
   }
 
-  onScanFailure(error: any) {
-    // Don't log every scan failure as it's normal when no QR code is in view
-    // console.warn('Sync QR Scanner: Scan failure (no QR code detected):', error);
-  }
-
-  onScanComplete(result: any) {
-    console.log('Sync QR Scanner: Scan complete event:', result);
-  }
-
-  onCamerasFound(devices: any[]) {
-    console.log('Sync QR Scanner: Cameras found:', devices);
-    // Clear any camera-related error messages
-    if (this.errorMessage && (this.errorMessage.includes('camera') || this.errorMessage.includes('Camera'))) {
-      this.errorMessage = null;
-      this.cdr.detectChanges();
-    }
-  }
-
-  onCamerasNotFound() {
-    console.error('Sync QR Scanner: No cameras found');
-    this.errorMessage = 'No cameras found. Please check camera permissions and ensure your device has a camera.';
-    this.cdr.detectChanges();
-  }
-
-  onPermissionResponse(permission: boolean) {
-    console.log('Sync QR Scanner: Camera permission response:', permission);
-    if (!permission) {
-      this.errorMessage = 'Camera permission denied. Please allow camera access to scan QR codes.';
-      this.cdr.detectChanges();
-    } else {
-      // Clear permission-related error messages
-      if (this.errorMessage && this.errorMessage.includes('permission')) {
-        this.errorMessage = null;
-        this.cdr.detectChanges();
-      }
-    }
-  }
-
-  onProcessPastedOffer() {
-    if (this.pastedOffer.trim()) {
-      this.errorMessage = null; // Clear any previous errors
-      let data = this.pastedOffer.trim();
-      // Always try to decompress, and only proceed if valid JSON after decompress
-      let decompressed = decompressFromEncodedURIComponent(data);
-      if (decompressed) {
-        data = decompressed;
-      }
-      try {
-        JSON.parse(data); // Validate JSON before passing on
-        this.handleProcessOffer(data);
-      } catch (e) {
-        this.errorMessage = 'Invalid offer: please paste the code from the other device.';
-      }
-    }
-  }
-
-  private async handleProcessOffer(data: string) {
-    try {
-      console.log('[SyncComponent] Processing offer data via service...');
-      const clientAnswer = await this.syncService.processOfferDataAsClient(data, () => this.cdr.detectChanges());
-      this.clientAnswer = clientAnswer;
-      this.errorMessage = null; // Clear error on success
-      this.cdr.detectChanges();
-    } catch (error) {
-      console.error('[SyncComponent] Failed to process offer data:', error);
-      this.syncService.connectionStatus = SyncConnectionStatus.Client_Failed;
-
-      // Set user-friendly error message
-      if (error instanceof SyntaxError) {
-        this.errorMessage = 'Invalid QR code content. Please scan the correct QR code from the server device.';
-      } else {
-        this.errorMessage = `Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
-      }
-
-      // Reset scan state to allow retry
-      this.scannedQr = null;
-      this.pastedOffer = '';
-
-      this.cdr.detectChanges();
-    }
-  }
-
-  async processClientAnswer() {
-    if (this.serverAnswerInput.trim()) {
-      let data = this.serverAnswerInput.trim();
-      // Always try to decompress, and only proceed if valid JSON after decompress
-      let decompressed = decompressFromEncodedURIComponent(data);
-      if (decompressed) {
-        data = decompressed;
-      }
-      try {
-        JSON.parse(data); // Validate JSON before passing on
-        console.log('[SyncComponent] Processing client answer via service...');
-        await this.syncService.processClientAnswerAsServer(data);
-        this.cdr.detectChanges();
-      } catch (error) {
-        console.error('[SyncComponent] Failed to process client answer:', error);
-        this.errorMessage = 'Invalid answer: please paste the code from the other device.';
-        this.syncService.connectionStatus = SyncConnectionStatus.Server_Failed;
-        this.cdr.detectChanges();
-      }
-    }
-  }
-
-
-
-  checkConnectionState() {
-    console.log('[SyncComponent] Connection state check:');
-    console.log('- WebRTC service:', this.webrtc);
-    console.log('- Sync service connection status:', this.syncService.connectionStatus);
-    // We'll need to add a method to WebRTCService to get the current state
+  canProcessAnswer(): boolean {
+    return this.mode === 'server' && this.serverAnswerInput.trim().length > 0;
   }
 
   get allClients(): string[] {
-    const clients = new Set([
-      ...this.itemService.itemDeltas.map(d => d.client),
-      ...Object.keys(this.syncService.lastSync),
-      SyncService.FAKE_DEVICE_ID
-    ]);
-    clients.delete(this.syncService.deviceId);
+    const lastSync = this.webrtc.getLastSync();
+    const deviceId = this.webrtc.getDeviceId();
+    const clients = new Set([deviceId, ...Object.keys(lastSync)]);
     return Array.from(clients);
   }
 
   getPhotoCount(clientId: string): number {
-    // Count photos added by this client since last sync
-    const lastSync = this.syncService.lastSync[clientId] || new Date(0);
-    return this.itemService.itemDeltas.filter(d => d.client === clientId && d.time > lastSync && d.photosAdded).reduce((sum, d) => sum + (d.photosAdded?.length || 0), 0);
+    const lastSync = this.webrtc.getLastSync();
+    const since = lastSync[clientId] || new Date(0);
+    const deltas = this.itemService.itemDeltasSince(since).filter(d => d.client === clientId);
+    return deltas.reduce((count, delta) => count + (delta.photosAdded?.length || 0), 0);
   }
 
   getItemChangeCount(clientId: string): number {
-    // Count item changes by this client since last sync
-    const lastSync = this.syncService.lastSync[clientId] || new Date(0);
-    return this.itemService.itemDeltas.filter(d => d.client === clientId && d.time > lastSync).length;
-  }
-
-
-  getStatusInfo(): { label: string; badge: string } {
-    const status = this.syncService.connectionStatus;
-    switch (status) {
-      case SyncConnectionStatus.Server_Connected:
-      case SyncConnectionStatus.Client_Connected:
-        return { label: 'Connected', badge: 'success' };
-      case SyncConnectionStatus.Server_WaitingForAnswer:
-        return { label: 'Waiting for other device...', badge: 'warning' };
-      case SyncConnectionStatus.Server_GeneratingOffer:
-        return { label: 'Preparing connection...', badge: 'secondary' };
-      case SyncConnectionStatus.Client_CreatingAnswer:
-        return { label: 'Processing connection...', badge: 'secondary' };
-      case SyncConnectionStatus.Client_AnswerCreated:
-        return { label: 'Ready! Copy this code to the other device', badge: 'info' };
-      case SyncConnectionStatus.Server_AnswerProcessed:
-        return { label: 'Almost there! Waiting for connection...', badge: 'info' };
-      case SyncConnectionStatus.Server_Failed:
-      case SyncConnectionStatus.Client_Failed:
-        return { label: 'Error', badge: 'danger' };
-      case SyncConnectionStatus.NotConnected:
-        return { label: 'Not connected', badge: 'secondary' };
-      default:
-        return { label: String(status), badge: 'secondary' };
-    }
+    const lastSync = this.webrtc.getLastSync();
+    const since = lastSync[clientId] || new Date(0);
+    return this.itemService.itemDeltasSince(since).filter(d => d.client !== clientId).length;
   }
 }

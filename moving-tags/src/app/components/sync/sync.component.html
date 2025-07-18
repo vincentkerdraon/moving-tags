@@ -1,277 +1,242 @@
-<div class="container mt-4">
-  <div class="mb-3">
-    <button class="btn btn-danger me-2" (click)="confirmDeleteAll()">
-      Delete all local data
-    </button>
-    <button class="btn btn-warning" (click)="forceSync()">Force sync</button>
-  </div>
-  <h2>Sync Status</h2>
-  <div class="text-muted small">
-    <strong>Your Device ID:</strong> {{ syncService.deviceId }}
-  </div>
-  <div class="mb-3">
-    <strong>Status:</strong>
-    <span class="badge bg-{{ getStatusInfo().badge }} ms-2">{{
-      getStatusInfo().label
-    }}</span>
+<div class="container mt-3">
+  <!-- Header -->
+  <div class="row mb-3">
+    <div class="col">
+      <h2>Sync Data</h2>
+      <p class="text-muted">
+        <strong>Your Device ID:</strong> {{ webrtc.getDeviceId() }}
+      </p>
+    </div>
   </div>
 
-  <div
-    *ngIf="
-      mode === 'default' &&
-      syncService.connectionStatus !== SyncConnectionStatus.Client_Connected &&
-      syncService.connectionStatus !== SyncConnectionStatus.Server_Connected
-    "
-  >
-    <button class="btn btn-primary me-2" (click)="startServer()">
-      Start new server
-    </button>
-    <button class="btn btn-primary" (click)="connectToServer()">
-      Connect to server
-    </button>
-  </div>
-
-  <div
-    *ngIf="
-      mode !== 'default' &&
-      syncService.connectionStatus !== SyncConnectionStatus.Client_Connected &&
-      syncService.connectionStatus !== SyncConnectionStatus.Server_Connected
-    "
-  >
-    <button class="btn btn-secondary mb-3" (click)="cancelSync()">
-      Cancel connection
-    </button>
-  </div>
-
-  <div
-    *ngIf="
-      syncService.connectionStatus === SyncConnectionStatus.Client_Connected ||
-      syncService.connectionStatus === SyncConnectionStatus.Server_Connected
-    "
-  >
-    <button class="btn btn-secondary mb-3" (click)="cancelSync()">
-      Disconnect
-    </button>
-  </div>
-
-  <div
-    *ngIf="
-      mode === 'server' &&
-      syncService.connectionStatus !== SyncConnectionStatus.Server_Connected
-    "
-  >
-    <div class="row">
-      <div class="col-md-6">
-        <h4>Start New Server</h4>
-        <div class="alert alert-info">
-          <ol>
-            <li>
-              On the client device, in "Sync" tab, select "Connect to server".
-            </li>
-            <li>Scan this QR code and follow the instructions.</li>
-            <li>Scan the QR code displayed on the client device, OR</li>
-            <li>Paste the answer here.</li>
-          </ol>
-        </div>
-        <input
-          id="answerInput"
-          type="text"
-          class="form-control"
-          [(ngModel)]="serverAnswerInput"
-          placeholder="Paste the code from the other device..."
-        />
+  <!-- Connection Status -->
+  <div class="row mb-3">
+    <div class="col">
+      <div
+        class="alert"
+        [ngClass]="{
+          'alert-success': isConnected,
+          'alert-warning': !isConnected && mode !== 'default',
+          'alert-info': mode === 'default'
+        }"
+      >
+        <strong>Status:</strong> {{ getConnectionStatus() }}
         <button
-          class="btn btn-success btn-sm mt-2"
-          (click)="processClientAnswer()"
-          [disabled]="!serverAnswerInput"
+          *ngIf="isConnected"
+          class="btn btn-sm btn-outline-primary ms-2"
+          (click)="forceReconnect()"
         >
-          Process answer
+          Force Reconnect
         </button>
       </div>
-      <div class="col-md-6">
-        <div *ngIf="syncService.connectionStarted">
-          <div *ngIf="syncService.qrData">
-            <app-webrtc-qr-code
-              [data]="syncService.qrData"
-            ></app-webrtc-qr-code>
-          </div>
-          <div *ngIf="syncService.rawOffer">
-            <button
-              class="btn btn-outline-secondary btn-sm d-block mx-auto"
-              (click)="copyRawOffer()"
-            >
-              Copy offer
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
-  <div
-    *ngIf="
-      mode === 'client' &&
-      syncService.connectionStatus !== SyncConnectionStatus.Client_Connected
-    "
-  >
-    <h4>Connect to Server</h4>
-    <div *ngIf="!clientAnswer">
-      <div class="alert alert-info">
-        <ol>
-          <li>
-            Scan the QR code displayed on the server device using the camera
-            below, OR
-          </li>
-          <li>Paste the offer in the text field.</li>
-        </ol>
-      </div>
-
-      <div class="row">
-        <div class="col-md-6">
-          <div class="mb-3">
-            <label for="offerInput" class="form-label">Paste offer</label>
-            <input
-              id="offerInput"
-              type="text"
-              class="form-control"
-              [(ngModel)]="pastedOffer"
-              placeholder="Paste the JSON offer from the server device..."
-            />
-            <button
-              class="btn btn-success btn-sm mt-2"
-              (click)="onProcessPastedOffer()"
-              [disabled]="!pastedOffer"
-            >
-              Process Offer
-            </button>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Or Scan QR Code</label>
-
-          <!-- Error Message Display -->
-          @if (errorMessage) {
-          <div
-            class="alert alert-danger alert-dismissible fade show mb-2"
-            role="alert"
-          >
-            <strong>Scan Error:</strong> {{ errorMessage }}
-            <button
-              type="button"
-              class="btn-close"
-              aria-label="Close"
-              (click)="errorMessage = null"
-            ></button>
-          </div>
-          }
-
-          <div
-            class="border rounded p-2"
-            style="
-              min-height: 300px;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-            "
-          >
-            <div style="max-width: 400px; width: 100%">
-              <zxing-scanner
-                (scanSuccess)="onQrCodeResult($event)"
-                (scanError)="onScanError($event)"
-                (scanFailure)="onScanFailure($event)"
-                (scanComplete)="onScanComplete($event)"
-                (camerasFound)="onCamerasFound($event)"
-                (camerasNotFound)="onCamerasNotFound()"
-                (permissionResponse)="onPermissionResponse($event)"
-                [torch]="false"
-                [enable]="true"
-                [tryHarder]="true"
-                [timeBetweenScans]="500"
-                style="
-                  max-width: 100%;
-                  max-height: 250px;
-                  width: 100%;
-                  flex-shrink: 0;
-                "
-              >
-              </zxing-scanner>
-            </div>
-          </div>
-          <div *ngIf="scannedQr" class="mt-2">
-            <div class="alert alert-success">
-              <strong>QR Code Scanned Successfully!</strong><br />
-              <small>Processing connection data...</small>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="mt-3" *ngIf="clientAnswer">
-      <div class="alert alert-info">
-        <span
-          >Scan this QR code or copy the code below to the server to finish
-          connecting:</span
-        >
-      </div>
-      <div class="d-flex justify-content-center">
-        <app-webrtc-qr-code [data]="clientAnswer"></app-webrtc-qr-code>
-      </div>
+  <!-- Action Buttons -->
+  <div class="row mb-3" *ngIf="mode === 'default'">
+    <div class="col">
+      <button class="btn btn-primary me-2" (click)="startServer()">
+        Start as Server
+      </button>
+      <button class="btn btn-secondary me-2" (click)="connectToServer()">
+        Connect to Server
+      </button>
       <button
-        class="btn btn-outline-secondary btn-sm d-block mx-auto"
-        (click)="copyToClipboard(compressAnswer(clientAnswer))"
-        [disabled]="!clientAnswer"
+        class="btn btn-success me-2"
+        (click)="forceSync()"
+        [disabled]="!canSync()"
       >
-        Copy answer
+        Force Sync
+      </button>
+      <button class="btn btn-danger" (click)="confirmDeleteAll()">
+        Delete All Data
       </button>
     </div>
   </div>
 
-  <div
-    *ngIf="
-      syncService.connectionStatus === SyncConnectionStatus.NotConnected ||
-      syncService.connectionStatus === SyncConnectionStatus.Client_Connected ||
-      syncService.connectionStatus === SyncConnectionStatus.Server_Connected
-    "
-  >
-    <div class="table-responsive">
-      <table class="table table-bordered mt-4">
-        <thead>
-          <tr>
-            <th>Device</th>
-            <th class="d-none d-md-table-cell">Last Sync</th>
-            <th>Photos</th>
-            <th>Changes</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let client of allClients">
-            <td>
-              <div>
-                {{
-                  client === syncService.deviceId ? client + " (You)" : client
-                }}
-              </div>
-              <div class="d-md-none text-muted small">
-                {{
-                  syncService.lastSync[client]
-                    ? (syncService.lastSync[client] | date : "short")
-                    : "Never"
-                }}
-              </div>
-            </td>
-            <td class="d-none d-md-table-cell">
-              {{
-                syncService.lastSync[client]
-                  ? (syncService.lastSync[client] | date : "short")
-                  : "Never"
-              }}
-            </td>
-            <td>{{ getPhotoCount(client) }}</td>
-            <td>{{ getItemChangeCount(client) }}</td>
-          </tr>
-        </tbody>
-      </table>
+  <!-- Server Mode - Show QR Code -->
+  <div class="row mb-3" *ngIf="mode === 'server'">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Server Mode - Share this QR Code</h5>
+        </div>
+        <div class="card-body">
+          <div *ngIf="canShowQr()">
+            <app-webrtc-qr-code [data]="qrCodeData" [size]="256">
+            </app-webrtc-qr-code>
+            <div class="mt-3">
+              <button
+                class="btn btn-outline-primary me-2"
+                (click)="copyQrData()"
+              >
+                Copy QR Data
+              </button>
+              <button class="btn btn-secondary" (click)="cancelSync()">
+                Cancel
+              </button>
+            </div>
+          </div>
+          <div *ngIf="!canShowQr()" class="text-center">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Generating QR code...</span>
+            </div>
+            <p class="mt-2">Generating QR code...</p>
+          </div>
+
+          <!-- Server Answer Input -->
+          <div class="mt-4" *ngIf="canShowQr()">
+            <h6>Client Answer</h6>
+            <p class="text-muted">Paste the answer from the client device:</p>
+            <textarea
+              class="form-control mb-2"
+              rows="4"
+              [(ngModel)]="serverAnswerInput"
+              placeholder="Paste client answer here..."
+            >
+            </textarea>
+            <button
+              class="btn btn-success"
+              (click)="onProcessServerAnswer()"
+              [disabled]="!canProcessAnswer()"
+            >
+              Process Answer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client Mode - Scan QR or Paste Offer -->
+  <div class="row mb-3" *ngIf="mode === 'client'">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Client Mode - Scan QR Code or Paste Offer</h5>
+        </div>
+        <div class="card-body">
+          <!-- QR Scanner -->
+          <div class="mb-3">
+            <h6>Scan QR Code</h6>
+            <zxing-scanner
+              [enable]="true"
+              (scanSuccess)="onQrCodeResult($event)"
+              [formats]="allowedFormats"
+            >
+            </zxing-scanner>
+          </div>
+
+          <!-- Manual Paste -->
+          <div class="mb-3">
+            <h6>Or Paste Offer Data</h6>
+            <textarea
+              class="form-control mb-2"
+              rows="4"
+              [(ngModel)]="pastedOffer"
+              placeholder="Paste server offer here..."
+            >
+            </textarea>
+            <button
+              class="btn btn-primary me-2"
+              (click)="onProcessPastedOffer()"
+              [disabled]="!pastedOffer.trim()"
+            >
+              Connect
+            </button>
+            <button class="btn btn-secondary" (click)="cancelSync()">
+              Cancel
+            </button>
+          </div>
+
+          <!-- Client Answer Display -->
+          <div *ngIf="canCopyAnswer()" class="mt-4">
+            <h6>Your Answer</h6>
+            <p class="text-muted">
+              Copy this answer and send it to the server:
+            </p>
+            <textarea
+              class="form-control mb-2"
+              rows="4"
+              [value]="compressAnswer(clientAnswer)"
+              readonly
+            >
+            </textarea>
+            <button
+              class="btn btn-success me-2"
+              (click)="copyCompressedAnswer()"
+            >
+              Copy Compressed Answer
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Display -->
+  <div class="row mb-3" *ngIf="errorMessage">
+    <div class="col">
+      <div class="alert alert-danger">
+        <strong>Error:</strong> {{ errorMessage }}
+        <button
+          type="button"
+          class="btn-close float-end"
+          (click)="errorMessage = null"
+        ></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sync Status Table -->
+  <div class="row mb-3" *ngIf="allClients.length > 0">
+    <div class="col">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Sync Status</h5>
+        </div>
+        <div class="card-body">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Device</th>
+                <th class="d-none d-md-table-cell">Last Sync</th>
+                <th>Photos</th>
+                <th>Changes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let client of allClients">
+                <td>
+                  <div>
+                    {{
+                      client === webrtc.getDeviceId()
+                        ? client + " (You)"
+                        : client
+                    }}
+                  </div>
+                  <div class="d-md-none text-muted small">
+                    {{
+                      webrtc.getLastSync()[client]
+                        ? (webrtc.getLastSync()[client] | date : "short")
+                        : "Never"
+                    }}
+                  </div>
+                </td>
+                <td class="d-none d-md-table-cell">
+                  {{
+                    webrtc.getLastSync()[client]
+                      ? (webrtc.getLastSync()[client] | date : "short")
+                      : "Never"
+                  }}
+                </td>
+                <td>{{ getPhotoCount(client) }}</td>
+                <td>{{ getItemChangeCount(client) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>

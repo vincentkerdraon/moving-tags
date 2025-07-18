@@ -8,10 +8,11 @@ import { QRCodeComponent } from 'angularx-qrcode';
   imports: [CommonModule, QRCodeComponent],
   template: `
     <div class="d-flex flex-column align-items-center">
-      <qrcode [qrdata]="data" [errorCorrectionLevel]="'L'"></qrcode>
+      <qrcode [qrdata]="data" [errorCorrectionLevel]="'L'" [size]="size"></qrcode>
     </div>
   `
 })
 export class WebrtcQrCodeComponent {
   @Input() data: string = '';
+  @Input() size: number = 256;
 }

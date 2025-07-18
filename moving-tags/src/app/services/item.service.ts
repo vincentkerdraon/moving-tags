@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { ChecklistTag, ClientId, DestinationTag, Item, ItemAction, ItemDelta, ItemTag } from '../models/data.models';
 import { ImageService } from './image.service';
 import { SyncService } from './sync.service';
+import { WebRTCService } from './webrtc.service';
 
 function generateClientId(): ClientId {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -14,11 +15,11 @@ export class ItemService {
   private _itemDeltas: ItemDelta[] = [];
   allItemTags: Set<ItemTag> = new Set();
   allChecklistTags: Set<ChecklistTag> = new Set();
-  
+
   private static readonly STORAGE_KEY = 'items';
   private static readonly DELTAS_KEY = 'itemDeltas';
 
-  constructor(private imageService: ImageService, private syncService: SyncService) {
+  constructor(private imageService: ImageService, private syncService: SyncService, private webrtc: WebRTCService) {
     // Attach this ItemService instance to SyncService for sync callbacks
     this.syncService.itemService = this;
     const storedItems = localStorage.getItem(ItemService.STORAGE_KEY);
@@ -43,7 +44,7 @@ export class ItemService {
         this._itemDeltas = [];
       }
     }
-    
+
     // Rebuild tag sets after loading items from storage
     this.rebuildTagSets();
   }
@@ -63,9 +64,9 @@ export class ItemService {
     return this._itemDeltas;
   }
 
-itemDeltasSince(time: Date): ItemDelta[] {
-  return this._itemDeltas.filter(delta => delta.time> time);
-}
+  itemDeltasSince(time: Date): ItemDelta[] {
+    return this._itemDeltas.filter(delta => delta.time > time);
+  }
 
   /**
    * Save an item. Computes the diff, updates the item, and records the delta.
@@ -102,7 +103,7 @@ itemDeltasSince(time: Date): ItemDelta[] {
       time: now,
       id: item.id,
       action: idx === -1 ? ItemAction.add : ItemAction.update,
-      client: this.syncService.deviceId,
+      client: this.webrtc.getDeviceId(),
       ...(itemTagsAdded.length ? { itemTagsAdded } : {}),
       ...(itemTagsRemoved.length ? { itemTagsRemoved } : {}),
       ...(checklistTagsAdded.length ? { checklistTagsAdded } : {}),
@@ -115,7 +116,7 @@ itemDeltasSince(time: Date): ItemDelta[] {
     this._itemDeltas.push(delta);
     this.rebuildTagSets(); // Rebuild tag sets after any item change
     this.persist();
-   this.syncService.triggerSync();
+    this.syncService.triggerSync();
   }
 
   /**
@@ -132,7 +133,7 @@ itemDeltasSince(time: Date): ItemDelta[] {
         time: now,
         id,
         action: ItemAction.remove,
-        client: this.syncService.deviceId,
+        client: this.webrtc.getDeviceId(),
         ...(item.itemTags.length ? { itemTagsRemoved: item.itemTags } : {}),
         ...(item.checklistTags.length ? { checklistTagsRemoved: item.checklistTags } : {}),
         ...(item.photos.length ? { photosRemoved: item.photos } : {}),
@@ -142,7 +143,7 @@ itemDeltasSince(time: Date): ItemDelta[] {
       this._itemDeltas.push(delta);
       this.rebuildTagSets(); // Rebuild tag sets after item removal
       this.persist();
-   this.syncService.triggerSync();
+      this.syncService.triggerSync();
     }
   }
 
