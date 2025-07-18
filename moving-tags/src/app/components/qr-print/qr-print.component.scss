@@ -1,10 +1,12 @@
-.print-container {
-  padding: 1.5rem;
-}
+
 .row.mb-4 {
   margin-bottom: 0.0rem !important;
 }
 @media print {
+
+  
+
+
   .print-container {
     position: absolute;
     left: 0;

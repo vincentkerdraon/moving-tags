@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { DestinationTag } from '../../models/data.models';
 
@@ -8,9 +7,8 @@ import { DestinationTag } from '../../models/data.models';
 @Component({
   selector: 'app-destination-tag',
   standalone: true,
-  imports: [NgIf],
   template: `
-    <span *ngIf="destination" class="badge bg-warning text-dark border border-dark me-1">
+    <span class="badge bg-destination-tag text-light border border-dark me-1">
       {{ destination }}
     </span>
   `,

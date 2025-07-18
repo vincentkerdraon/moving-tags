@@ -10,9 +10,12 @@ import { ChecklistTag } from '../../models/data.models';
 })
 export class ChecklistTagComponent {
   @Input() tag!: ChecklistTag;
-  @Input() removable = false;
   @Output() tagClick = new EventEmitter<ChecklistTag>();
   @Output() removeTag = new EventEmitter<ChecklistTag>();
+
+  canRemove(): boolean {
+    return this.removeTag.observers.length > 0;
+  }
 
   onTagClick() {
     this.tagClick.emit(this.tag);

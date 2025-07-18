@@ -1,5 +1,5 @@
 <div class="container mt-4">
-  <h1 class="mb-4">Item List</h1>
+  <h2 class="mb">Item List</h2>
 
   <div class="table-responsive">
     <table class="table table-striped table-hover align-middle">
@@ -9,57 +9,63 @@
           <th>Tags</th>
           <th class="text-muted d-none d-sm-table-cell">Weight</th>
         </tr>
-        <!-- Row for creating new items -->
         <tr class="table-success bg-opacity-25">
-          <td colspan="3" class="py-2">
+          <td colspan="3">
             <div class="d-flex align-items-center gap-2">
               <span class="text-muted small">New:</span>
-              <button
-                class="btn btn-sm btn-secondary text-nowrap"
-                (click)="onScanQr()"
-                title="Scan QR Code"
-              >
-                ▦
-              </button>
-              <input
-                type="text"
-                class="form-control form-control-sm flex-grow-1"
-                placeholder="New item ID..."
-                [(ngModel)]="newItemId"
-                (keyup.enter)="onCreateNewItem()"
-              />
-              <button
-                class="btn btn-sm btn-success"
-                (click)="onCreateNewItem()"
-                [disabled]="!newItemId.trim()"
-              >
-                ✨
-              </button>
+              <span class="input-group">
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="onScanQr()"
+                  title="Scan QR Code"
+                  type="button"
+                >
+                  ▦
+                </button>
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  placeholder="New item ID..."
+                  [(ngModel)]="newItemId"
+                  (keyup.enter)="onCreateNewItem()"
+                />
+                <button
+                  class="btn btn-sm btn-success"
+                  (click)="onCreateNewItem()"
+                  [disabled]="!newItemId.trim()"
+                  type="button"
+                >
+                  ✨
+                </button>
+              </span>
             </div>
           </td>
         </tr>
         <!-- Filter row integrated in header -->
         <tr
-          class="bg-light"
+          class="table-info bg-opacity-50"
           *ngIf="filter.length > 0 || filteredItems?.length !== 0"
         >
           <td colspan="3" class="py-2">
             <div class="d-flex align-items-center gap-2">
               <span class="text-muted small">Filter:</span>
-              <input
-                type="text"
-                class="form-control form-control-sm flex-grow-1"
-                placeholder="Search by ID or Tag..."
-                [(ngModel)]="filter"
-              />
-              <button
-                class="btn btn-sm btn-outline-secondary"
-                (click)="filter = ''"
-                [disabled]="!filter"
-                title="Clear filter"
-              >
-                ✕
-              </button>
+              <span class="input-group">
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  placeholder="Search by ID or Tag..."
+                  [(ngModel)]="filter"
+                />
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="filter = ''"
+                  [disabled]="!filter"
+                  title="Clear filter"
+                  type="button"
+                >
+                  ✕
+                </button>
+              </span>
             </div>
           </td>
         </tr>
@@ -72,17 +78,16 @@
         >
           <td>{{ item.id }}</td>
           <td>
-            <span
+            <app-item-tag
               *ngFor="let tag of item.itemTags"
-              class="badge rounded-pill bg-primary me-1"
-              >{{ tag }}</span
-            >
-            <span
+              [tag]="tag"
+            ></app-item-tag>
+            <app-checklist-tag
               *ngFor="let tag of item.checklistTags"
-              class="badge rounded-pill bg-info text-dark me-1"
-              >{{ tag }}</span
-            >
+              [tag]="tag"
+            ></app-checklist-tag>
             <app-destination-tag
+              *ngIf="item.destination"
               [destination]="item.destination"
             ></app-destination-tag>
             <div

@@ -21,29 +21,21 @@
     <div class="mb-2">
       <label class="form-label">Item Tags</label>
       <div class="mb-2 d-flex flex-wrap gap-2">
-        <span
+        <app-item-tag
           *ngFor="let tag of localItem.itemTags"
-          class="badge rounded-pill bg-primary d-flex align-items-center px-3 py-2 fs-6"
-        >
-          {{ tag }}
-          <button
-            type="button"
-            class="btn-close btn-close-white ms-2"
-            aria-label="Remove"
-            (click)="removeItemTag(tag)"
-          ></button>
-        </span>
+          [tag]="tag"
+          (removeTag)="removeItemTag(tag)"
+          class="fs-3"
+        ></app-item-tag>
       </div>
       <div *ngIf="itemTagSuggestions.length > 0" class="mb-2">
         <small class="text-muted">Suggestions: </small>
-        <span
+        <app-item-tag
           *ngFor="let suggestion of itemTagSuggestions"
-          class="badge rounded-pill bg-secondary me-2 pointer"
-          style="cursor: pointer"
-          (click)="addSuggestedItemTag(suggestion)"
-        >
-          {{ suggestion }}
-        </span>
+          [tag]="suggestion"
+          (tagClick)="addSuggestedItemTag(suggestion)"
+          class="fs-5 pointer"
+        ></app-item-tag>
       </div>
       <div class="input-group mb-1">
         <input
@@ -73,29 +65,21 @@
         Checklist Tags <span class="text-muted small">(Optional)</span>
       </label>
       <div class="mb-2 d-flex flex-wrap gap-2">
-        <span
+        <app-checklist-tag
           *ngFor="let tag of localItem.checklistTags"
-          class="badge rounded-pill bg-info text-dark d-flex align-items-center px-3 py-2 fs-6"
-        >
-          {{ tag }}
-          <button
-            type="button"
-            class="btn-close ms-2"
-            aria-label="Remove"
-            (click)="removeChecklistTag(tag)"
-          ></button>
-        </span>
+          [tag]="tag"
+          (removeTag)="removeChecklistTag(tag)"
+          class="fs-3"
+        ></app-checklist-tag>
       </div>
       <div *ngIf="checklistTagSuggestions.length > 0" class="mb-2">
         <small class="text-muted">Suggestions: </small>
-        <span
+        <app-checklist-tag
           *ngFor="let suggestion of checklistTagSuggestions"
-          class="badge rounded-pill bg-secondary me-2 pointer"
-          style="cursor: pointer"
-          (click)="addSuggestedChecklistTag(suggestion)"
-        >
-          {{ suggestion }}
-        </span>
+          [tag]="suggestion"
+          (tagClick)="addSuggestedChecklistTag(suggestion)"
+          class="fs-5 pointer"
+        ></app-checklist-tag>
       </div>
       <div class="input-group">
         <input
@@ -137,7 +121,7 @@
             <div class="mb-2 w-100">
               <img
                 [src]="imageService.getPhotoData(photoId)"
-                class="img-thumbnail w-100"
+                class="w-100"
                 style="
                   height: auto;
                   max-width: 100%;

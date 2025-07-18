@@ -5,11 +5,13 @@ import { ChecklistTag, DestinationTag, Item, ItemTag } from '../../models/data.m
 import { ErrorService } from '../../services/error.service';
 import { ImageService } from '../../services/image.service';
 import { ItemService } from '../../services/item.service';
+import { ChecklistTagComponent } from "../checklist-tag/checklist-tag.component";
+import { ItemTagComponent } from "../item-tag/item-tag.component";
 
 @Component({
   selector: 'app-edit-item',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ItemTagComponent, ChecklistTagComponent],
   templateUrl: './edit-item.component.html'
 })
 export class EditItemComponent implements OnInit {
@@ -19,7 +21,7 @@ export class EditItemComponent implements OnInit {
 
   // Local working copy of the item
   localItem!: Item;
-  
+
   newItemTag = '';
   newChecklistTag = '';
   itemTagSuggestions: ItemTag[] = [];
@@ -27,7 +29,7 @@ export class EditItemComponent implements OnInit {
   confirmDelete = false;
   destinationOptions = Object.values(DestinationTag);
 
-  constructor(public itemService: ItemService, private errorService: ErrorService, private cdr: ChangeDetectorRef, public imageService: ImageService) {}
+  constructor(public itemService: ItemService, private errorService: ErrorService, private cdr: ChangeDetectorRef, public imageService: ImageService) { }
 
   ngOnInit() {
     // Create a deep copy of the item for local editing
@@ -51,7 +53,7 @@ export class EditItemComponent implements OnInit {
         this.errorService.showError(err);
         return;
       }
-      
+
       // Update the original item reference and emit the changes
       this.item = { ...itemToSave };
       this.itemCreated.emit({ ...this.item });
@@ -118,8 +120,8 @@ export class EditItemComponent implements OnInit {
     const input = event.target.value.toLowerCase();
     if (input.length > 0) {
       this.checklistTagSuggestions = Array.from(this.itemService.allChecklistTags)
-        .filter(tag => 
-          tag.toLowerCase().includes(input) && 
+        .filter(tag =>
+          tag.toLowerCase().includes(input) &&
           !this.localItem.checklistTags.includes(tag)
         )
         .slice(0, 10);

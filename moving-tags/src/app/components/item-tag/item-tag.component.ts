@@ -10,9 +10,12 @@ import { ItemTag } from '../../models/data.models';
 })
 export class ItemTagComponent {
   @Input() tag!: ItemTag;
-  @Input() removable = false;
   @Output() tagClick = new EventEmitter<ItemTag>();
-  @Output() removeTag = new EventEmitter<ItemTag>();
+  @Output() removeTag: EventEmitter<ItemTag> = new EventEmitter<ItemTag>();
+
+  canRemove(): boolean {
+    return this.removeTag.observers.length > 0;
+  }
 
   onTagClick() {
     this.tagClick.emit(this.tag);

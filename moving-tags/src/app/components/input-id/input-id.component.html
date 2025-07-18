@@ -1,12 +1,14 @@
-<div class="d-flex align-items-center gap-2">
-  <button class="btn btn-secondary me-2" (click)="onScanQr()">
+<div class="input-group">
+  <button class="btn btn-outline-secondary fs-5" (click)="onScanQr()">
     <span aria-hidden="true">▦</span>
   </button>
   <input
     type="text"
-    class="form-control flex-grow-1 me-2"
+    class="form-control flex-grow-1"
     [(ngModel)]="id"
     placeholder="Enter or scan item ID"
   />
-  <button class="btn btn-primary" (click)="onSubmit()">Go</button>
+  <button class="btn btn-outline-primary" (click)="onSubmit()" [disabled]="!id">
+    Go
+  </button>
 </div>

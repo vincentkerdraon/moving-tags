@@ -3,14 +3,16 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Item } from '../../models/data.models';
 import { ItemService } from '../../services/item.service';
+import { ChecklistTagComponent } from "../checklist-tag/checklist-tag.component";
 import { DestinationTagComponent } from '../destination-tag/destination-tag.component';
 import { EditItemComponent } from '../edit-item/edit-item.component';
+import { ItemTagComponent } from "../item-tag/item-tag.component";
 import { QrScannerComponent } from '../qr-scanner/qr-scanner.component';
 
 @Component({
   selector: 'app-item-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, EditItemComponent, DestinationTagComponent, QrScannerComponent],
+  imports: [CommonModule, FormsModule, EditItemComponent, DestinationTagComponent, QrScannerComponent, ChecklistTagComponent, ItemTagComponent],
   templateUrl: './item-list.component.html'
 })
 export class ItemListComponent {
@@ -23,7 +25,7 @@ export class ItemListComponent {
   newItemId = '';
   showQrScanner = false;
 
-  constructor(public itemService: ItemService) {}
+  constructor(public itemService: ItemService) { }
 
   get items(): Item[] {
     return this.itemService.items;
@@ -89,7 +91,7 @@ export class ItemListComponent {
   onCreateNewItem() {
     const id = this.newItemId.trim();
     if (!id) return;
-    
+
     // Check if item already exists
     const found = this.items.find(item => item.id === id);
     if (found) {
@@ -106,7 +108,7 @@ export class ItemListComponent {
         weight: undefined
       };
     }
-    
+
     // Clear the input field
     this.newItemId = '';
   }

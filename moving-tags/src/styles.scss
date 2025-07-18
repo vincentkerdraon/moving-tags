@@ -1,3 +1,198 @@
+// Input group: square sides for left and right buttons
+.input-group > .btn:first-child {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-top-left-radius: 1.2em !important;
+  border-bottom-left-radius: 1.2em !important;
+}
+.input-group > .form-control {
+  border-radius: 0 !important;
+}
+.input-group > .btn:last-child {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-top-right-radius: 1.2em !important;
+  border-bottom-right-radius: 1.2em !important;
+  margin-left: -2px;
+}
+// Square left side for input-group button
+.input-group > .form-control {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+.input-group > .btn {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  margin-left: -2px;
+}
+
+// Funky table styles
+.table {
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 24px rgba(255,79,129,0.10);
+  font-family: 'Fredoka', Arial, sans-serif;
+  font-size: 1.08em;
+}
+.table th {
+  background: #ff4f81 60%;
+  color: #fffbe6;
+  font-weight: 700;
+  border: none;
+}
+.table-striped > tbody > tr:nth-of-type(odd) {
+  background: linear-gradient(90deg, #ffe156 0%, #ffb627 100%) !important;
+}
+.table-striped > tbody > tr:nth-of-type(even) {
+  background: #fffbe6 !important;
+}
+.table-hover > tbody > tr:hover {
+  background: #ff4f81 !important;
+  color: #fffbe6;
+  transition: background 0.2s, color 0.2s;
+}
+.table td, .table th {
+  border: none;
+  vertical-align: middle;
+}
+// Funky transparent select options
+select.form-select option {
+  background: transparent !important;
+  color: #22223b;
+}
+// Funky transparent select
+.form-select {
+  background: transparent !important;
+  box-shadow: none;
+  border: 2px solid #ff4f81;
+  color: #22223b;
+}
+// Funky badge backgrounds
+.bg-item-tag {
+  background: linear-gradient(90deg, #ff4f81 60%, #da7e49 100%) !important;
+  color: #fffbe6 !important;
+  box-shadow: 0 2px 8px rgba(255,79,129,0.10);
+}
+.bg-checkpoint-tag {
+  background: linear-gradient(90deg, #00c2cb 60%, #14989f 100%) !important;
+  color: #fffbe6 !important;
+  box-shadow: 0 2px 8px rgba(0,194,203,0.10);
+}
+.bg-destination-tag {
+  background: linear-gradient(90deg, #ffe156 60%, #6fff7b 100%) !important;
+  color: #22223b !important;
+  box-shadow: 0 2px 8px rgba(255,225,86,0.10);
+}
+
 @import 'bootstrap/dist/css/bootstrap.min.css';
 
-/* You can add global styles to this file, and also import other style files */
+
+// Funky popup (modal, alert) styles
+.modal-content, .alert {
+  border-radius: 2em;
+  border: 2px solid #00c2cb;
+  background: #fffbe6;
+  box-shadow: 0 6px 32px rgba(255,79,129,0.18);
+  color: #22223b;
+}
+.modal-header, .modal-footer {
+  border: none;
+  background: transparent;
+}
+.modal-title {
+  font-family: 'Fredoka', Arial, sans-serif;
+  font-weight: 700;
+  color: #ff4f81;
+}
+.alert {
+  font-weight: bold;
+  font-size: 1.1em;
+  letter-spacing: 0.01em;
+}
+
+// Funky nav styles
+.navbar, .nav {
+  background: linear-gradient(90deg, #ff4f81 60%, #00c2cb 100%);
+  box-shadow: 0 2px 12px rgba(0,194,203,0.10);
+  padding: 0.5em 1em;
+}
+.navbar-brand, .nav-link, .navbar-nav .nav-link.active {
+  color: #fffbe6 !important;
+  font-family: 'Fredoka', Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 4px #ff4f81;
+}
+.nav-link:hover, .navbar-brand:hover {
+  color: #ffe156 !important;
+  text-decoration: underline wavy #ffe156;
+}
+.navbar-toggler {
+  border-radius: 1em;
+  border: 2px solid #ffe156;
+  background: #ff4f81;
+}
+.navbar-toggler-icon {
+  background-image: linear-gradient(90deg, #ffe156 40%, #00c2cb 100%);
+}
+
+/* Funky, playful, mobile-focused global styles */
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&display=swap');
+
+// Bootstrap variable overrides (before importing Bootstrap)
+$primary: #ff4f81;
+$secondary: #00c2cb;
+$success: #6fff7b;
+$info: #ffe156;
+$warning: #ffb627;
+$danger: #ff595e;
+$light: #f7f7f7;
+$dark: #22223b;
+
+body {
+  font-family: 'Fredoka', Arial, sans-serif;
+  background: linear-gradient(135deg, #ffe156 0%, #ff4f81 100%);
+  min-height: 100vh;
+  color: #22223b;
+}
+
+.btn, button {
+  border-radius: 2em !important;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(255,79,129,0.15);
+  letter-spacing: 0.03em;
+  transition: transform 0.1s;
+}
+.btn:active, button:active {
+  transform: scale(0.97);
+}
+
+.card {
+  border-radius: 1.5em;
+  box-shadow: 0 4px 16px rgba(0,194,203,0.10);
+  border: none;
+}
+
+.form-control {
+  border-radius: 1.2em;
+  border: 2px solid #ff4f81;
+  background: #fffbe6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Fredoka', Arial, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+
+@media (max-width: 600px) {
+  body {
+    font-size: 1.08em;
+    padding: 0.5em;
+  }
+  .card, .btn, .form-control {
+    font-size: 1.1em;
+  }
+}

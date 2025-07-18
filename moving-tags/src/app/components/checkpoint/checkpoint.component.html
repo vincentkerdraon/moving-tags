@@ -1,11 +1,9 @@
 <div class="container mt-4">
-  <h2 class="">
+  <h2>
     Checkpoint
     <app-checklist-tag
       *ngIf="checkpointId"
       [tag]="checkpointId"
-      [removable]="false"
-      class="badge rounded-pill bg-info text-dark me-1"
     ></app-checklist-tag>
   </h2>
 
@@ -149,24 +147,30 @@
           <app-checklist-tag
             [tag]="tag"
             (tagClick)="onSelectTag(tag)"
-            [removable]="false"
-            class="badge rounded-pill bg-info text-dark me-1 fs-6"
+            class="fs-3"
           ></app-checklist-tag>
         </ng-container>
       </div>
-      <div
-        class="d-flex flex-column flex-sm-row gap-2 align-items-start align-items-sm-center"
-      >
+
+      <div class="input-group mb-4">
+        <button
+          class="btn btn-outline-secondary btn-lg fs-3"
+          type="button"
+          (click)="onScanQr()"
+          title="Scan QR Code"
+        >
+          <span>▦</span>
+        </button>
+
         <input
+          type="text"
           list="tagList"
           id="tagInput"
-          class="form-control flex-grow-1"
+          class="form-control"
           [(ngModel)]="tagInput"
           (ngModelChange)="onTagInputChange($event)"
         />
-        <datalist id="tagList">
-          <option *ngFor="let tag of tagList" [value]="tag"></option>
-        </datalist>
+
         <button
           class="btn btn-primary"
           (click)="onSelectTag(tagInput)"
@@ -175,6 +179,12 @@
         >
           ✨
         </button>
+      </div>
+
+      <div class="input-group mb-2">
+        <datalist id="tagList">
+          <option *ngFor="let tag of tagList" [value]="tag"></option>
+        </datalist>
       </div>
     </div>
   </ng-template>
