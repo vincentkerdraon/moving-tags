@@ -4,7 +4,7 @@
     <div class="col">
       <h2>Sync Data</h2>
       <p class="text-muted">
-        <strong>Your Device ID:</strong> {{ webrtc.getDeviceId() }}
+        <strong>Your Device ID:</strong> {{ webrtc.deviceId }}
       </p>
     </div>
   </div>
@@ -150,11 +150,31 @@
           </div>
 
           <!-- Client Answer Display -->
+          <!-- Server Offer Display (decompressed) -->
+          <div
+            *ngIf="
+              mode === 'client' && pastedOffer && pastedOffer.startsWith('v=')
+            "
+            class="mt-4"
+          >
+            <h6>Server Offer (decompressed)</h6>
+            <textarea
+              class="form-control mb-2"
+              rows="4"
+              [value]="pastedOffer"
+              readonly
+            ></textarea>
+          </div>
           <div *ngIf="canCopyAnswer()" class="mt-4">
             <h6>Your Answer</h6>
             <p class="text-muted">
-              Copy this answer and send it to the server:
+              Copy this answer and send it to the server, or scan the QR code:
             </p>
+            <app-webrtc-qr-code
+              [data]="compressAnswer(clientAnswer)"
+              [size]="256"
+              class="mb-3"
+            ></app-webrtc-qr-code>
             <textarea
               class="form-control mb-2"
               rows="4"
@@ -210,23 +230,21 @@
                 <td>
                   <div>
                     {{
-                      client === webrtc.getDeviceId()
-                        ? client + " (You)"
-                        : client
+                      client === webrtc.deviceId ? client + " (You)" : client
                     }}
                   </div>
                   <div class="d-md-none text-muted small">
                     {{
-                      webrtc.getLastSync()[client]
-                        ? (webrtc.getLastSync()[client] | date : "short")
+                      syncService.getLastSync(client)
+                        ? (syncService.getLastSync(client) | date : "short")
                         : "Never"
                     }}
                   </div>
                 </td>
                 <td class="d-none d-md-table-cell">
                   {{
-                    webrtc.getLastSync()[client]
-                      ? (webrtc.getLastSync()[client] | date : "short")
+                    syncService.getLastSync(client)
+                      ? (syncService.getLastSync(client) | date : "short")
                       : "Never"
                   }}
                 </td>

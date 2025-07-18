@@ -1,11 +1,10 @@
-
 import { Injectable } from '@angular/core';
-import { ChecklistTag, ClientId, DestinationTag, Item, ItemAction, ItemDelta, ItemTag } from '../models/data.models';
+import { ChecklistTag, DestinationTag, DeviceId, Item, ItemAction, ItemDelta, ItemTag } from '../models/data.models';
 import { ImageService } from './image.service';
 import { SyncService } from './sync.service';
 import { WebRTCService } from './webrtc.service';
 
-function generateClientId(): ClientId {
+function generateClientId(): DeviceId {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
 
@@ -102,8 +101,8 @@ export class ItemService {
     const delta: ItemDelta = {
       time: now,
       id: item.id,
+      deviceId: this.webrtc.deviceId,
       action: idx === -1 ? ItemAction.add : ItemAction.update,
-      client: this.webrtc.getDeviceId(),
       ...(itemTagsAdded.length ? { itemTagsAdded } : {}),
       ...(itemTagsRemoved.length ? { itemTagsRemoved } : {}),
       ...(checklistTagsAdded.length ? { checklistTagsAdded } : {}),
@@ -132,8 +131,8 @@ export class ItemService {
       const delta: ItemDelta = {
         time: now,
         id,
+        deviceId: this.webrtc.deviceId,
         action: ItemAction.remove,
-        client: this.webrtc.getDeviceId(),
         ...(item.itemTags.length ? { itemTagsRemoved: item.itemTags } : {}),
         ...(item.checklistTags.length ? { checklistTagsRemoved: item.checklistTags } : {}),
         ...(item.photos.length ? { photosRemoved: item.photos } : {}),
@@ -211,7 +210,7 @@ export class ItemService {
         time: rawDelta.time instanceof Date ? rawDelta.time : new Date(rawDelta.time),
       };
       // Skip if already exists locally (by id, time, and client)
-      if (this._itemDeltas.some(d => d.id === delta.id && d.client === delta.client && d.time.getTime() === delta.time.getTime())) {
+      if (this._itemDeltas.some(d => d.id === delta.id && d.deviceId === delta.deviceId && d.time.getTime() === delta.time.getTime())) {
         continue;
       }
       if (delta.action === ItemAction.remove) {

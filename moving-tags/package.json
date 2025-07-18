@@ -25,6 +25,7 @@
     "@angular/core": "^20.1.0",
     "@angular/forms": "^20.1.0",
     "@angular/platform-browser": "^20.1.0",
+    "@angular/platform-browser-dynamic": "^20.1.0",
     "@angular/router": "^20.1.0",
     "@angular/service-worker": "^20.1.0",
     "@zxing/ngx-scanner": "^20.0.0",
@@ -34,7 +35,8 @@
     "exif-js": "^2.3.0",
     "lz-string": "^1.5.0",
     "rxjs": "~7.8.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "zone.js": "^0.15.1"
   },
   "devDependencies": {
     "@angular/build": "^20.1.0",

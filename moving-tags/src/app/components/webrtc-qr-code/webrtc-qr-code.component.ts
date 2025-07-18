@@ -8,7 +8,7 @@ import { QRCodeComponent } from 'angularx-qrcode';
   imports: [CommonModule, QRCodeComponent],
   template: `
     <div class="d-flex flex-column align-items-center">
-      <qrcode [qrdata]="data" [errorCorrectionLevel]="'L'" [size]="size"></qrcode>
+      <qrcode [qrdata]="data" [errorCorrectionLevel]="'L'" ></qrcode>
     </div>
   `
 })

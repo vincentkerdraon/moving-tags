@@ -47,7 +47,7 @@ export class SyncComponent implements OnInit {
 
     // Listen for connection state changes
     this.webrtc.onConnectionState((connected) => {
-      this.isConnected = connected;
+      this.isConnected = connected === 'connected';
       console.log('[SyncComponent] Connection state changed:', connected);
       this.cdr.detectChanges();
     });
@@ -75,6 +75,14 @@ export class SyncComponent implements OnInit {
     this.errorMessage = null;
 
     this.webrtc.startAsServer((offerString) => {
+      // Validate offer contains at least one m= line (required for valid SDP)
+      if (!/\nm=/.test('\n' + offerString)) {
+        console.error('[SyncComponent] Generated offer is missing m= line! Offer:', offerString);
+        this.errorMessage = 'Generated offer is invalid (missing m= line). Please try again.';
+        this.qrCodeData = '';
+        this.cdr.detectChanges();
+        return;
+      }
       // Compress the offer for QR code
       this.qrCodeData = compressToEncodedURIComponent(offerString);
       console.log('[SyncComponent] Server offer ready, QR data generated');
@@ -91,11 +99,13 @@ export class SyncComponent implements OnInit {
 
   async onProcessPastedOffer() {
     try {
-      let offerData = this.pastedOffer.trim();
+      let offerData = this.pastedOffer;
+      // console.log('[SyncComponent] Raw pasted offer data:', offerData);
 
-      // Check if offer data is JSON directly
-      if (!offerData.startsWith('{')) {
+      // Decompress if not plain SDP
+      if (!offerData.startsWith('v=')) {
         const decompressed = decompressFromEncodedURIComponent(offerData);
+        // console.log('[SyncComponent] Decompressed offer data:', decompressed);
         if (decompressed) {
           offerData = decompressed;
         } else {
@@ -103,21 +113,12 @@ export class SyncComponent implements OnInit {
         }
       }
 
-      try {
-        JSON.parse(offerData);
-      } catch (error) {
-        throw new Error('Invalid JSON format in offer data');
-      }
-
-      // Connect as client and get answer
-      const answerString = await this.webrtc.connectAsClient(offerData, (answer) => {
+      // Pass SDP or JSON directly to connectAsClient
+      await this.webrtc.connectAsClient(offerData, (answer) => {
         this.clientAnswer = answer;
         console.log('[SyncComponent] Client answer ready');
         this.cdr.detectChanges();
       });
-
-      this.clientAnswer = answerString;
-      this.cdr.detectChanges();
 
     } catch (error) {
       console.error('[SyncComponent] Error processing offer:', error);
@@ -254,15 +255,8 @@ export class SyncComponent implements OnInit {
   getConnectionStatus(): string {
     if (this.isConnected) {
       return 'Connected';
-    } else if (this.webrtc.getConnectionState().peerConnectionState === 'connecting') {
-      return 'Connecting...';
-    } else if (this.mode === 'server' && this.qrCodeData) {
-      return 'Waiting for client';
-    } else if (this.mode === 'client' && this.clientAnswer) {
-      return 'Waiting for server';
-    } else {
-      return 'Not connected';
     }
+    return 'Not connected';
   }
 
   canSync(): boolean {
@@ -277,27 +271,43 @@ export class SyncComponent implements OnInit {
     return this.mode === 'client' && !!this.clientAnswer;
   }
 
+
   canProcessAnswer(): boolean {
     return this.mode === 'server' && this.serverAnswerInput.trim().length > 0;
   }
 
+
+  /**
+   * Returns a list of all known client device IDs, including this device and any others seen in item deltas.
+   */
   get allClients(): string[] {
-    const lastSync = this.webrtc.getLastSync();
-    const deviceId = this.webrtc.getDeviceId();
-    const clients = new Set([deviceId, ...Object.keys(lastSync)]);
-    return Array.from(clients);
+    // Collect all deviceIds from item deltas
+    const deltas = this.itemService.itemDeltasSince(new Date(0));
+    const ids = new Set<string>();
+    for (const d of deltas) {
+      if (d.deviceId) ids.add(d.deviceId);
+    }
+    // If WebRTCService has a deviceId property, include it
+    if (this.webrtc && (this.webrtc as any).deviceId) {
+      ids.add((this.webrtc as any).deviceId);
+    }
+    return Array.from(ids);
   }
 
-  getPhotoCount(clientId: string): number {
-    const lastSync = this.webrtc.getLastSync();
-    const since = lastSync[clientId] || new Date(0);
-    const deltas = this.itemService.itemDeltasSince(since).filter(d => d.client === clientId);
-    return deltas.reduce((count, delta) => count + (delta.photosAdded?.length || 0), 0);
-  }
-
+  /**
+   * Returns the number of item changes from other devices since the last sync for the given clientId.
+   */
   getItemChangeCount(clientId: string): number {
-    const lastSync = this.webrtc.getLastSync();
-    const since = lastSync[clientId] || new Date(0);
-    return this.itemService.itemDeltasSince(since).filter(d => d.client !== clientId).length;
+    const lastSync = this.syncService.getLastSync?.(clientId);
+    const since = (lastSync instanceof Date) ? lastSync : new Date(0);
+    return this.itemService.itemDeltasSince(since).filter(d => d.deviceId !== clientId).length;
+  }
+
+  /**
+   * Returns the number of photos added by the given client/device.
+   */
+  getPhotoCount(clientId: string): number {
+    const deltas = this.itemService.itemDeltasSince(new Date(0)).filter(d => d.deviceId === clientId);
+    return deltas.reduce((count, delta) => count + (Array.isArray(delta.photosAdded) ? delta.photosAdded.length : 0), 0);
   }
 }

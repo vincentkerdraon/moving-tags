@@ -1,6 +1,6 @@
 export type Id = string;
 export type PhotoId = string;
-export type ClientId = string;
+export type DeviceId = string;
 export type ItemTag = string;
 export type ChecklistTag = string;
 export enum DestinationTag {
@@ -10,7 +10,7 @@ export enum DestinationTag {
   Bathroom = 'bathroom'
 }
 export enum ItemAction {
-   add="add", remove="remove", update="update"
+  add = "add", remove = "remove", update = "update"
 }
 
 export interface Photo {
@@ -36,8 +36,8 @@ export interface AppData {
 export interface ItemDelta {
   time: Date;
   id: Id;
-  action:ItemAction;
-  client:ClientId;
+  action: ItemAction;
+  deviceId: DeviceId;
 
   itemTagsAdded?: ItemTag[];
   itemTagsRemoved?: ItemTag[];
@@ -45,6 +45,6 @@ export interface ItemDelta {
   checklistTagsRemoved?: ChecklistTag[];
   photosAdded?: PhotoId[];
   photosRemoved?: PhotoId[];
-  weight?: number; 
+  weight?: number;
   destination?: DestinationTag;
 }
