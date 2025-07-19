@@ -10,28 +10,33 @@ import { ItemService } from './services/item.service';
   selector: 'app-root',
   imports: [CommonModule, RouterOutlet, RouterLink, ErrorComponent, ErrorComponent, EditItemComponent],
   templateUrl: './app.html',
-  styles: [], 
+  styles: [],
   standalone: true,
 })
 export class App {
 
   showEditPopup = false;
   popupItem: any = null;
+  testDataAlertDismissed = false;
 
-  constructor(private itemService: ItemService, public errorService: ErrorService) {}
+  constructor(private itemService: ItemService, public errorService: ErrorService) { }
 
 
 
   get showTestDataAlert(): boolean {
-    return this.itemService.items.length === 0;
+    return this.itemService.items.length === 0 && !this.testDataAlertDismissed;
   }
 
   generateTestData() {
     this.itemService.generateFakeData();
   }
 
-  onItemCreated(item: any) {}
-  closeEditPopup() {}
+  hideTestDataAlert() {
+    this.testDataAlertDismissed = true;
+  }
+
+  onItemCreated(item: any) { }
+  closeEditPopup() { }
 
   showError(message: string) {
     this.errorService.showError(message);

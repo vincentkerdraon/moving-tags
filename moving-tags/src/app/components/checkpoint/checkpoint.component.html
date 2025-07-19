@@ -18,6 +18,11 @@
       (submitId)="onSubmitId($event)"
       (scanQr)="onScanQr()"
     ></app-input-id>
+    <app-qr-scanner
+      *ngIf="showQrScanner"
+      (close)="showQrScanner = false"
+      (scanResult)="onQrScanResult($event)"
+    ></app-qr-scanner>
     <div class="row mt-4">
       <div class="col-md-6">
         <h5>Remaining Items</h5>
@@ -153,15 +158,6 @@
       </div>
 
       <div class="input-group mb-4">
-        <button
-          class="btn btn-outline-secondary btn-lg fs-3"
-          type="button"
-          (click)="onScanQr()"
-          title="Scan QR Code"
-        >
-          <span>▦</span>
-        </button>
-
         <input
           type="text"
           list="tagList"

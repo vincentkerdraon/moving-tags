@@ -62,8 +62,12 @@
         </div>
         <div class="card-body">
           <div *ngIf="canShowQr()">
-            <app-webrtc-qr-code [data]="qrCodeData" [size]="256">
-            </app-webrtc-qr-code>
+            <div class="text-center mb-3">
+              <app-webrtc-qr-code
+                [data]="qrCodeData"
+                [size]="qrCodeDisplaySize"
+              ></app-webrtc-qr-code>
+            </div>
             <div class="mt-3">
               <button
                 class="btn btn-outline-primary me-2"
@@ -83,113 +87,76 @@
             <p class="mt-2">Generating QR code...</p>
           </div>
 
-          <!-- Server Answer Input -->
+          <!-- Server Answer Input (scan or paste, like client) -->
           <div class="mt-4" *ngIf="canShowQr()">
             <h6>Client Answer</h6>
-            <p class="text-muted">Paste the answer from the client device:</p>
-            <textarea
-              class="form-control mb-2"
-              rows="4"
-              [(ngModel)]="serverAnswerInput"
-              placeholder="Paste client answer here..."
-            >
-            </textarea>
-            <button
-              class="btn btn-success"
-              (click)="onProcessServerAnswer()"
-              [disabled]="!canProcessAnswer()"
-            >
-              Process Answer
-            </button>
+            <p class="text-muted">
+              Scan or paste the answer from the client device:
+            </p>
+            <div class="input-group mb-2">
+              <button
+                class="btn btn-outline-secondary fs-5"
+                (click)="showScanner = true"
+              >
+                <span aria-hidden="true">▦</span>
+              </button>
+              <input
+                type="text"
+                class="form-control flex-grow-1"
+                [(ngModel)]="serverAnswerInput"
+                placeholder="Paste or scan client answer"
+              />
+              <button
+                class="btn btn-outline-primary fs-5"
+                (click)="onProcessServerAnswer()"
+                [disabled]="!serverAnswerInput.trim()"
+              >
+                <span aria-hidden="true">✨</span>
+              </button>
+            </div>
           </div>
+
+          <!-- QR Scanner Modal (shared for both client/server) -->
+          <app-qr-scanner
+            *ngIf="showScanner"
+            (scanResult)="onServerScanResult($event)"
+            (close)="showScanner = false"
+          >
+          </app-qr-scanner>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Client Mode - Scan QR or Paste Offer -->
+  <!-- Client Mode - Need server offer: Scan QR Code or Paste -->
   <div class="row mb-3" *ngIf="mode === 'client'">
     <div class="col">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="mb-0">Client Mode - Scan QR Code or Paste Offer</h5>
-        </div>
-        <div class="card-body">
-          <!-- QR Scanner -->
-          <div class="mb-3">
-            <h6>Scan QR Code</h6>
-            <zxing-scanner
-              [enable]="true"
-              (scanSuccess)="onQrCodeResult($event)"
-              [formats]="allowedFormats"
-            >
-            </zxing-scanner>
-          </div>
-
-          <!-- Manual Paste -->
-          <div class="mb-3">
-            <h6>Or Paste Offer Data</h6>
-            <textarea
-              class="form-control mb-2"
-              rows="4"
-              [(ngModel)]="pastedOffer"
-              placeholder="Paste server offer here..."
-            >
-            </textarea>
-            <button
-              class="btn btn-primary me-2"
-              (click)="onProcessPastedOffer()"
-              [disabled]="!pastedOffer.trim()"
-            >
-              Connect
-            </button>
-            <button class="btn btn-secondary" (click)="cancelSync()">
-              Cancel
-            </button>
-          </div>
-
-          <!-- Client Answer Display -->
-          <!-- Server Offer Display (decompressed) -->
-          <div
-            *ngIf="
-              mode === 'client' && pastedOffer && pastedOffer.startsWith('v=')
-            "
-            class="mt-4"
-          >
-            <h6>Server Offer (decompressed)</h6>
-            <textarea
-              class="form-control mb-2"
-              rows="4"
-              [value]="pastedOffer"
-              readonly
-            ></textarea>
-          </div>
-          <div *ngIf="canCopyAnswer()" class="mt-4">
-            <h6>Your Answer</h6>
-            <p class="text-muted">
-              Copy this answer and send it to the server, or scan the QR code:
-            </p>
-            <app-webrtc-qr-code
-              [data]="compressAnswer(clientAnswer)"
-              [size]="256"
-              class="mb-3"
-            ></app-webrtc-qr-code>
-            <textarea
-              class="form-control mb-2"
-              rows="4"
-              [value]="compressAnswer(clientAnswer)"
-              readonly
-            >
-            </textarea>
-            <button
-              class="btn btn-success me-2"
-              (click)="copyCompressedAnswer()"
-            >
-              Copy Compressed Answer
-            </button>
-          </div>
-        </div>
+      <div class="mb-2 fw-bold">Need server offer: Scan QR Code or Paste</div>
+      <div class="input-group">
+        <button class="btn btn-outline-secondary fs-5" (click)="onScanQr()">
+          <span aria-hidden="true">▦</span>
+        </button>
+        <input
+          type="text"
+          class="form-control flex-grow-1"
+          [(ngModel)]="pastedOffer"
+          placeholder="Enter or scan server offer"
+        />
+        <button
+          class="btn btn-outline-primary fs-5"
+          (click)="onProcessPastedOffer()"
+          [disabled]="!pastedOffer.trim()"
+        >
+          <span aria-hidden="true">✨</span>
+        </button>
       </div>
+      <!-- QR Scanner Modal (shared for both client/server) -->
+      <app-qr-scanner
+        *ngIf="showScanner"
+        (scanResult)="onScanResult($event)"
+        (close)="showScanner = false"
+      >
+      </app-qr-scanner>
     </div>
   </div>
 

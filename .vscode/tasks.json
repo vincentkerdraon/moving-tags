@@ -1,0 +1,14 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "ng build",
+			"command": "npm run ng build || ng build",
+			"group": "build",
+			"problemMatcher": [
+				"$tsc"
+			]
+		}
+	]
+}

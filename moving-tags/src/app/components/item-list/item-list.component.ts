@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Item } from '../../models/data.models';
 import { ItemService } from '../../services/item.service';
@@ -25,7 +25,7 @@ export class ItemListComponent {
   newItemId = '';
   showQrScanner = false;
 
-  constructor(public itemService: ItemService) { }
+  constructor(public itemService: ItemService, private cdr: ChangeDetectorRef) { }
 
   get items(): Item[] {
     return this.itemService.items;
@@ -53,6 +53,8 @@ export class ItemListComponent {
 
   onQrScanResult(result: string) {
     this.showQrScanner = false;
+    this.cdr.detectChanges();
+    console.log('[ItemListComponent] QR scan result:', result);
     if (result && result.trim()) {
       this.newItemId = result.trim();
       this.onCreateNewItem();

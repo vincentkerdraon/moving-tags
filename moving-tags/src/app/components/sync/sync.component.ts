@@ -8,15 +8,29 @@ import { ImageService } from '../../services/image.service';
 import { ItemService } from '../../services/item.service';
 import { SyncService } from '../../services/sync.service';
 import { WebRTCService } from '../../services/webrtc.service';
+import { QrScannerComponent } from '../qr-scanner/qr-scanner.component';
 import { WebrtcQrCodeComponent } from '../webrtc-qr-code/webrtc-qr-code.component';
 
 @Component({
   selector: 'app-sync',
   templateUrl: './sync.component.html',
   standalone: true,
-  imports: [CommonModule, DatePipe, WebrtcQrCodeComponent, ZXingScannerModule, FormsModule]
+  imports: [CommonModule, DatePipe, WebrtcQrCodeComponent, ZXingScannerModule, FormsModule, QrScannerComponent]
 })
 export class SyncComponent implements OnInit {
+  showScanner = false;
+
+  onScanQr() {
+    this.showScanner = true;
+  }
+
+  onQrCodeResult(result: string) {
+    this.showScanner = false;
+    console.log('[SyncComponent] QR code scanned:', result);
+    this.scannedQr = result;
+    this.pastedOffer = result;
+    this.onProcessPastedOffer();
+  }
   mode: 'default' | 'server' | 'client' = 'default';
   scannedQr: string | null = null;
   pastedOffer: string = '';
@@ -154,12 +168,6 @@ export class SyncComponent implements OnInit {
 
   // === QR Code Scanning ===
 
-  onQrCodeResult(result: string) {
-    console.log('[SyncComponent] QR code scanned:', result);
-    this.scannedQr = result;
-    this.pastedOffer = result;
-    this.onProcessPastedOffer();
-  }
 
   // === Utility Methods ===
 
@@ -309,5 +317,28 @@ export class SyncComponent implements OnInit {
   getPhotoCount(clientId: string): number {
     const deltas = this.itemService.itemDeltasSince(new Date(0)).filter(d => d.deviceId === clientId);
     return deltas.reduce((count, delta) => count + (Array.isArray(delta.photosAdded) ? delta.photosAdded.length : 0), 0);
+  }
+
+  onServerScanResult(result: string) {
+    this.serverAnswerInput = result;
+    this.showScanner = false;
+  }
+
+  onScanResult(result: string) {
+    if (this.mode === 'client') {
+      this.pastedOffer = result;
+      this.onProcessPastedOffer();
+    } else if (this.mode === 'server') {
+      this.serverAnswerInput = result;
+    }
+    this.showScanner = false;
+  }
+
+  get qrCodeDisplaySize(): number {
+    if (typeof window !== 'undefined') {
+      // 32px padding on each side for safety
+      return Math.min(256, Math.max(120, window.innerWidth - 32));
+    }
+    return 256;
   }
 }

@@ -20,3 +20,13 @@ docker build --network=host --build-arg BASE_HREF=/ -t moving-tags .
 docker run --rm --network=host -p 8080:8080 moving-tags
 ssh -R 80:localhost:8080 nokey@localhost.run
 ```
+
+quick test with ng serve\
+For security reason, vite needs to be configured to allow this domain name (changing each time)
+
+```bash
+ssh -R 80:localhost:8080 nokey@localhost.run
+#add 52193a5fcb7265.lhr.life to moving-tags/angular.json
+#projects → moving-tags → architect → serve → options → allowedHosts
+ng serve --host=0.0.0.0 --disable-host-check
+```

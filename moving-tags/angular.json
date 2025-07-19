@@ -80,6 +80,15 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "host": "0.0.0.0",
+              "allowedHosts": [
+                  "5267839c28c262.lhr.life",
+                  "*.lhr.life",
+                  "lhr.life"
+                ]
+          },
+         
           "configurations": {
             "production": {
               "buildTarget": "moving-tags:build:production"
