@@ -6,6 +6,7 @@ import { ZXingScannerModule } from '@zxing/ngx-scanner';
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import { ImageService } from '../../services/image.service';
 import { ItemService } from '../../services/item.service';
+import { NetworkService } from '../../services/network.service';
 import { SyncService } from '../../services/sync.service';
 import { WebRTCService } from '../../services/webrtc.service';
 import { QrScannerComponent } from '../qr-scanner/qr-scanner.component';
@@ -37,7 +38,6 @@ export class SyncComponent implements OnInit {
   clientAnswer: string | null = null;
   serverAnswerInput: string = '';
   errorMessage: string | null = null;
-  isConnected = false;
 
   // UI state for QR codes and connection
   qrCodeData: string = '';
@@ -49,6 +49,7 @@ export class SyncComponent implements OnInit {
     public itemService: ItemService,
     public imageService: ImageService,
     public webrtc: WebRTCService,
+    public network: NetworkService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -58,16 +59,10 @@ export class SyncComponent implements OnInit {
     // Initialize services
     this.syncService.initialize();
     this.webrtc.initialize();
-
-    // Listen for connection state changes
-    this.webrtc.onConnectionState((connected) => {
-      this.isConnected = connected === 'connected';
-      console.log('[SyncComponent] Connection state changed:', connected);
+    // Listen for connection status changes from NetworkService
+    this.network.connectionStatusChanged.subscribe(() => {
       this.cdr.detectChanges();
     });
-
-    // Check current connection state
-    this.isConnected = this.webrtc.isConnectionHealthy();
   }
 
   // === Core Actions ===
@@ -76,7 +71,6 @@ export class SyncComponent implements OnInit {
     this.syncService.triggerSync();
     this.cdr.detectChanges();
   }
-
   forceReconnect() {
     this.webrtc.forceReconnect();
   }
@@ -112,28 +106,29 @@ export class SyncComponent implements OnInit {
   }
 
   async onProcessPastedOffer() {
-    try {
-      let offerData = this.pastedOffer;
-      // console.log('[SyncComponent] Raw pasted offer data:', offerData);
+    await this.processClientOfferString(this.pastedOffer, false);
+  }
 
+  /**
+   * Shared logic for processing client offers (manual or scanned)
+   */
+  private async processClientOfferString(offer: string, scanned: boolean) {
+    try {
+      let offerData = offer;
       // Decompress if not plain SDP
       if (!offerData.startsWith('v=')) {
         const decompressed = decompressFromEncodedURIComponent(offerData);
-        // console.log('[SyncComponent] Decompressed offer data:', decompressed);
         if (decompressed) {
           offerData = decompressed;
         } else {
           throw new Error('Failed to decompress offer data');
         }
       }
-
-      // Pass SDP or JSON directly to connectAsClient
       await this.webrtc.connectAsClient(offerData, (answer) => {
         this.clientAnswer = answer;
-        console.log('[SyncComponent] Client answer ready');
+        console.log(`[SyncComponent] Client answer ready${scanned ? ' (scanned)' : ''}`);
         this.cdr.detectChanges();
       });
-
     } catch (error) {
       console.error('[SyncComponent] Error processing offer:', error);
       const errorMessage = (error instanceof Error) ? error.message : 'Unknown error';
@@ -142,25 +137,38 @@ export class SyncComponent implements OnInit {
     }
   }
 
-  async onProcessServerAnswer() {
-    try {
-      const compressedAnswer = this.serverAnswerInput.trim();
 
-      // Decompress the answer
+  // === Server Answer Processing ===
+  /**
+   * Process the server answer from manual input (button click)
+   */
+  async onProcessServerAnswer() {
+    await this.processServerAnswerString(this.serverAnswerInput, false);
+  }
+
+  /**
+   * Process the server answer from a scanned QR code (direct, no input field)
+   */
+  async onServerScanResult(result: string) {
+    this.showScanner = false;
+    await this.processServerAnswerString(result, true);
+  }
+
+  /**
+   * Shared logic for processing server answers (manual or scanned)
+   */
+  private async processServerAnswerString(answer: string, scanned: boolean) {
+    try {
+      const compressedAnswer = answer.trim();
       const answerData = decompressFromEncodedURIComponent(compressedAnswer);
       if (!answerData) {
         throw new Error('Failed to decompress answer data');
       }
-
-      // Process the decompressed answer
       await this.webrtc.processAnswer(answerData);
-
-      console.log('[SyncComponent] Server processed answer successfully');
+      console.log(`[SyncComponent] Server processed answer successfully${scanned ? ' (scanned)' : ''}`);
       this.cdr.detectChanges();
-
-    } catch (error) {
-      console.error('[SyncComponent] Error processing answer:', error);
-      const errorMessage = (error instanceof Error) ? error.message : 'Unknown error';
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.toString() || 'Unknown error';
       this.errorMessage = `Failed to process answer: ${errorMessage}`;
       this.cdr.detectChanges();
     }
@@ -261,14 +269,14 @@ export class SyncComponent implements OnInit {
   // === Status Helpers ===
 
   getConnectionStatus(): string {
-    if (this.isConnected) {
+    if (this.network.connectionStatus === 'connected') {
       return 'Connected';
     }
     return 'Not connected';
   }
 
   canSync(): boolean {
-    return this.isConnected;
+    return this.network.connectionStatus === 'connected';
   }
 
   canShowQr(): boolean {
@@ -319,19 +327,16 @@ export class SyncComponent implements OnInit {
     return deltas.reduce((count, delta) => count + (Array.isArray(delta.photosAdded) ? delta.photosAdded.length : 0), 0);
   }
 
-  onServerScanResult(result: string) {
-    this.serverAnswerInput = result;
-    this.showScanner = false;
-  }
 
-  onScanResult(result: string) {
+
+  async onScanResult(result: string) {
     if (this.mode === 'client') {
-      this.pastedOffer = result;
-      this.onProcessPastedOffer();
+      this.showScanner = false;
+      await this.processClientOfferString(result, true);
     } else if (this.mode === 'server') {
       this.serverAnswerInput = result;
+      this.showScanner = false;
     }
-    this.showScanner = false;
   }
 
   get qrCodeDisplaySize(): number {

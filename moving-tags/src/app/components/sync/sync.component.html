@@ -14,15 +14,29 @@
       <div
         class="alert"
         [ngClass]="{
-          'alert-success': isConnected,
-          'alert-warning': !isConnected && mode !== 'default',
-          'alert-info': mode === 'default'
+          'alert-success': network.connectionStatus === 'connected',
+          'alert-warning': network.connectionStatus === 'connecting',
+          'alert-info': network.connectionStatus === 'not connected'
         }"
       >
-        <strong>Status:</strong> {{ getConnectionStatus() }}
+        <strong>Status:</strong> {{ network.connectionStatus }}
         <button
-          *ngIf="isConnected"
-          class="btn btn-sm btn-outline-primary ms-2"
+          class="btn btn-secondary"
+          (click)="cancelSync()"
+          *ngIf="network.connectionStatus === 'connecting'"
+        >
+          Cancel
+        </button>
+        <button
+          class="btn btn-secondary"
+          (click)="cancelSync()"
+          *ngIf="network.connectionStatus === 'connected'"
+        >
+          Disconnect
+        </button>
+        <button
+          *ngIf="network.connectionStatus !== 'connected'"
+          class="btn btn-sm btn-outline-secondary ms-2"
           (click)="forceReconnect()"
         >
           Force Reconnect
@@ -34,10 +48,18 @@
   <!-- Action Buttons -->
   <div class="row mb-3" *ngIf="mode === 'default'">
     <div class="col">
-      <button class="btn btn-primary me-2" (click)="startServer()">
+      <button
+        class="btn btn-primary me-2"
+        (click)="startServer()"
+        *ngIf="network.connectionStatus === 'not connected'"
+      >
         Start as Server
       </button>
-      <button class="btn btn-secondary me-2" (click)="connectToServer()">
+      <button
+        class="btn btn-secondary me-2"
+        (click)="connectToServer()"
+        *ngIf="network.connectionStatus === 'not connected'"
+      >
         Connect to Server
       </button>
       <button
@@ -54,29 +76,29 @@
   </div>
 
   <!-- Server Mode - Show QR Code -->
-  <div class="row mb-3" *ngIf="mode === 'server'">
+  <div
+    class="row mb-3"
+    *ngIf="mode === 'server' && network.connectionStatus !== 'connected'"
+  >
     <div class="col">
       <div class="card">
         <div class="card-header">
-          <h5 class="mb-0">Server Mode - Share this QR Code</h5>
+          <h5 class="mb-0">
+            Server Mode - Share the offer - Receive the answer
+          </h5>
         </div>
         <div class="card-body">
+          <h6>Server Offer</h6>
           <div *ngIf="canShowQr()">
-            <div class="text-center mb-3">
+            <div class="text-center">
               <app-webrtc-qr-code
                 [data]="qrCodeData"
                 [size]="qrCodeDisplaySize"
               ></app-webrtc-qr-code>
             </div>
-            <div class="mt-3">
-              <button
-                class="btn btn-outline-primary me-2"
-                (click)="copyQrData()"
-              >
+            <div class="text-center">
+              <button class="btn btn-outline-primary" (click)="copyQrData()">
                 Copy QR Data
-              </button>
-              <button class="btn btn-secondary" (click)="cancelSync()">
-                Cancel
               </button>
             </div>
           </div>
@@ -88,12 +110,12 @@
           </div>
 
           <!-- Server Answer Input (scan or paste, like client) -->
-          <div class="mt-4" *ngIf="canShowQr()">
+          <div class="" *ngIf="canShowQr()">
             <h6>Client Answer</h6>
             <p class="text-muted">
               Scan or paste the answer from the client device:
             </p>
-            <div class="input-group mb-2">
+            <div class="input-group">
               <button
                 class="btn btn-outline-secondary fs-5"
                 (click)="showScanner = true"
@@ -129,34 +151,71 @@
   </div>
 
   <!-- Client Mode - Need server offer: Scan QR Code or Paste -->
-  <div class="row mb-3" *ngIf="mode === 'client'">
+  <div
+    class="row mb-3"
+    *ngIf="mode === 'client' && network.connectionStatus !== 'connected'"
+  >
     <div class="col">
-      <div class="mb-2 fw-bold">Need server offer: Scan QR Code or Paste</div>
-      <div class="input-group">
-        <button class="btn btn-outline-secondary fs-5" (click)="onScanQr()">
-          <span aria-hidden="true">▦</span>
-        </button>
-        <input
-          type="text"
-          class="form-control flex-grow-1"
-          [(ngModel)]="pastedOffer"
-          placeholder="Enter or scan server offer"
-        />
-        <button
-          class="btn btn-outline-primary fs-5"
-          (click)="onProcessPastedOffer()"
-          [disabled]="!pastedOffer.trim()"
-        >
-          <span aria-hidden="true">✨</span>
-        </button>
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">Client Mode - Enter or Scan Server Offer</h5>
+        </div>
+        <div class="card-body">
+          <div *ngIf="!clientAnswer">
+            <div class="mb-2 alert alert-info">
+              On the other device, "start as server".<br />
+              This server will generate an "offer".
+            </div>
+            <div class="input-group">
+              <button
+                class="btn btn-outline-secondary fs-5"
+                (click)="onScanQr()"
+              >
+                <span aria-hidden="true">▦</span>
+              </button>
+              <input
+                type="text"
+                class="form-control flex-grow-1"
+                [(ngModel)]="pastedOffer"
+                placeholder="Enter or scan server offer"
+              />
+              <button
+                class="btn btn-outline-primary fs-5"
+                (click)="onProcessPastedOffer()"
+                [disabled]="!pastedOffer.trim()"
+              >
+                <span aria-hidden="true">✨</span>
+              </button>
+            </div>
+            <!-- QR Scanner Modal (shared for both client/server) -->
+            <app-qr-scanner
+              *ngIf="showScanner"
+              (scanResult)="onScanResult($event)"
+              (close)="showScanner = false"
+            >
+            </app-qr-scanner>
+          </div>
+          <div *ngIf="clientAnswer">
+            <div class="mb-2 alert alert-info">
+              The offer is valid, here is the answer to transmit to the server.
+            </div>
+            <div class="text-center mb-3">
+              <app-webrtc-qr-code
+                [data]="compressAnswer(clientAnswer)"
+                [size]="qrCodeDisplaySize"
+              ></app-webrtc-qr-code>
+            </div>
+            <div class="text-center">
+              <button
+                class="btn btn-outline-primary"
+                (click)="copyCompressedAnswer()"
+              >
+                Copy QR Data
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      <!-- QR Scanner Modal (shared for both client/server) -->
-      <app-qr-scanner
-        *ngIf="showScanner"
-        (scanResult)="onScanResult($event)"
-        (close)="showScanner = false"
-      >
-      </app-qr-scanner>
     </div>
   </div>
 
