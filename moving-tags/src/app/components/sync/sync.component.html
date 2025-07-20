@@ -9,33 +9,42 @@
   </div>
 
   <!-- Connection Status -->
-  <div class="row mb-3">
+  <div class="row">
     <div class="col">
-      <div
-        class="alert"
-        [ngClass]="{
-          'alert-success': network.connectionStatus === 'connected',
-          'alert-warning': network.connectionStatus === 'connecting',
-          'alert-info': network.connectionStatus === 'not connected'
-        }"
-      >
-        <strong>Status:</strong> {{ network.connectionStatus }}
+      <div class="alert">
+        Status:
+        <span
+          [ngClass]="{
+            'text-success': network.connectionStatus === 'connected',
+            'text-warning': network.connectionStatus === 'connecting',
+            'text-info': network.connectionStatus === 'not connected'
+          }"
+        >
+          {{ network.connectionStatus }}
+        </span>
+        <span
+          *ngIf="
+            network.connectionStatus === 'connected' && network.otherDeviceId
+          "
+        >
+          <br />With Device ID: {{ network.otherDeviceId }}
+        </span>
         <button
-          class="btn btn-secondary"
+          class="btn btn-sm btn-outline-secondary"
           (click)="cancelSync()"
           *ngIf="network.connectionStatus === 'connecting'"
         >
           Cancel
         </button>
         <button
-          class="btn btn-secondary"
+          class="btn btn-sm btn-outline-secondary bg-white"
           (click)="cancelSync()"
           *ngIf="network.connectionStatus === 'connected'"
         >
           Disconnect
         </button>
         <button
-          *ngIf="network.connectionStatus !== 'connected'"
+          *ngIf="network.connectionStatus == 'not connected'"
           class="btn btn-sm btn-outline-secondary ms-2"
           (click)="forceReconnect()"
         >

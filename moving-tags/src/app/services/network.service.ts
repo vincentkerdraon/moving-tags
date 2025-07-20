@@ -10,7 +10,16 @@ const LOCAL_STORAGE_KEYS = {
 
 @Injectable({ providedIn: 'root' })
 export class NetworkService {
+    /**
+     * Closes the underlying WebRTC connection and updates connection status.
+     */
+    close(): void {
+        this.webrtcService.close();
+        this._connectionStatus = 'not connected';
+        this.connectionStatusChanged.emit(this._connectionStatus);
+    }
     private _connectionStatus: 'not connected' | 'connecting' | 'connected' = 'not connected';
+    private _otherDeviceId?: DeviceId = undefined;
     public connectionStatusChanged = new EventEmitter<'not connected' | 'connecting' | 'connected'>();
     public signalingDataReceived = new EventEmitter<any>();
 
@@ -20,6 +29,10 @@ export class NetworkService {
             console.log(`[NetworkService] Connection status updated: ${this._connectionStatus}`);
             this.connectionStatusChanged.emit(this._connectionStatus);
         });
+    }
+
+    get otherDeviceId(): DeviceId | undefined {
+        return this._otherDeviceId;
     }
 
     connect(): Promise<void> {

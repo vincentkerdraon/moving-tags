@@ -81,6 +81,11 @@ export class SyncComponent implements OnInit {
     console.log('[SyncComponent] Starting server...');
     this.mode = 'server';
     this.errorMessage = null;
+    // Set status to connecting
+    (this.network as any)._connectionStatus = 'connecting';
+    if (this.network.connectionStatusChanged) {
+      this.network.connectionStatusChanged.emit('connecting');
+    }
 
     this.webrtc.startAsServer((offerString) => {
       // Validate offer contains at least one m= line (required for valid SDP)
@@ -103,6 +108,11 @@ export class SyncComponent implements OnInit {
   connectToServer() {
     this.mode = 'client';
     this.errorMessage = null;
+    // Set status to connecting
+    (this.network as any)._connectionStatus = 'connecting';
+    if (this.network.connectionStatusChanged) {
+      this.network.connectionStatusChanged.emit('connecting');
+    }
   }
 
   async onProcessPastedOffer() {
@@ -251,7 +261,7 @@ export class SyncComponent implements OnInit {
     this.pastedOffer = '';
     this.serverAnswerInput = '';
     this.scannedQr = null;
-    this.webrtc.close();
+    this.network.close();
     this.cdr.detectChanges();
   }
 
