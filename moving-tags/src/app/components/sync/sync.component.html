@@ -27,7 +27,7 @@
             network.connectionStatus === 'connected' && network.otherDeviceId
           "
         >
-          <br />With Device ID: {{ network.otherDeviceId }}
+          <br />With Device ID: {{ network.otherDeviceId }} <br />
         </span>
         <button
           class="btn btn-sm btn-outline-secondary"
@@ -42,16 +42,6 @@
           *ngIf="network.connectionStatus === 'connected'"
         >
           Disconnect
-        </button>
-        <button
-          *ngIf="
-            network.connectionStatus == 'not connected' &&
-            network.couldReconnect
-          "
-          class="btn btn-sm btn-outline-secondary ms-2"
-          (click)="tryReconnect()"
-        >
-          Try Reconnect
         </button>
       </div>
     </div>

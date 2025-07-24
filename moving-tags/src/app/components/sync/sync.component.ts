@@ -71,9 +71,7 @@ export class SyncComponent implements OnInit {
     this.syncService.triggerSync();
     this.cdr.detectChanges();
   }
-  tryReconnect() {
-    this.network.reconnect();
-  }
+
 
   // === Server Mode ===
 

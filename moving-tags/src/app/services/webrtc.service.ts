@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { DeviceId } from '../models/data.models';
 
+// WebRTCService doesn't allow reconnection with old offer/answer
+// It requires a new signaling process for each connection
 
 @Injectable({ providedIn: 'root' })
 export class WebRTCService {
@@ -194,22 +196,22 @@ export class WebRTCService {
 
     tryReconnect(): void {
         console.log('[WebRTCService] Attempting ICE restart for connection recovery');
-        
-        if (this.peerConnection && 
-            (this.peerConnection.connectionState === 'disconnected' || 
-             this.peerConnection.connectionState === 'failed')) {
-            
+
+        if (this.peerConnection &&
+            (this.peerConnection.connectionState === 'disconnected' ||
+                this.peerConnection.connectionState === 'failed')) {
+
             // Add ICE restart event listener
             this.peerConnection.addEventListener("iceconnectionstatechange", (event) => {
                 const pc = this.peerConnection!;
                 console.log('[WebRTCService] ICE connection state:', pc.iceConnectionState);
-                
+
                 if (pc.iceConnectionState === "failed" || pc.iceConnectionState === "disconnected") {
                     console.log('[WebRTCService] ICE restart triggered due to connection failure');
                     pc.restartIce();
                 }
             });
-            
+
             // Trigger ICE restart immediately if connection is failed
             this.peerConnection.restartIce();
         } else {
