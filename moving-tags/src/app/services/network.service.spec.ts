@@ -48,7 +48,6 @@ class MockWebRTCService {
         this.connectionStateCallback('not connected');
     }
 }
-
 describe('NetworkService', () => {
     let networkService: NetworkService;
     let mockWebRTCService: MockWebRTCService;

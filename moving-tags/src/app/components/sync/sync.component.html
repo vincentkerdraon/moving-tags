@@ -80,7 +80,7 @@
   <!-- Server Mode - Show QR Code -->
   <div
     class="row mb-3"
-    *ngIf="mode === 'server' && network.connectionStatus !== 'connected'"
+    *ngIf="mode === 'server' && network.connectionStatus === 'connecting'"
   >
     <div class="col">
       <div class="card">
@@ -155,7 +155,7 @@
   <!-- Client Mode - Need server offer: Scan QR Code or Paste -->
   <div
     class="row mb-3"
-    *ngIf="mode === 'client' && network.connectionStatus !== 'connected'"
+    *ngIf="mode === 'client' && network.connectionStatus === 'connecting'"
   >
     <div class="col">
       <div class="card">

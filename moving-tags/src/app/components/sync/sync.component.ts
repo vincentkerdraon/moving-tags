@@ -274,14 +274,6 @@ export class SyncComponent implements OnInit {
     }
   }
 
-  // === Status Helpers ===
-
-  getConnectionStatus(): string {
-    if (this.network.connectionStatus === 'connected') {
-      return 'Connected';
-    }
-    return 'Not connected';
-  }
 
   canSync(): boolean {
     return this.network.connectionStatus === 'connected';

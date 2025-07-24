@@ -6,14 +6,7 @@ import { WebRTCService } from './webrtc.service';
 
 @Injectable({ providedIn: 'root' })
 export class NetworkService {
-    /**
-     * Closes the underlying WebRTC connection and updates connection status.
-     */
-    close(): void {
-        this.webrtcService.close();
-        this._connectionStatus = 'not connected';
-        this.connectionStatusChanged.emit(this._connectionStatus);
-    }
+
     private _connectionStatus: 'not connected' | 'connecting' | 'connected' = 'not connected';
     private _otherDeviceId?: DeviceId = undefined;
     public connectionStatusChanged = new EventEmitter<'not connected' | 'connecting' | 'connected'>();
@@ -35,6 +28,15 @@ export class NetworkService {
 
     get otherDeviceId(): DeviceId | undefined {
         return this._otherDeviceId;
+    }
+
+    /**
+ * Closes the underlying WebRTC connection and updates connection status.
+ */
+    close(): void {
+        this.webrtcService.close();
+        this._connectionStatus = 'not connected';
+        this.connectionStatusChanged.emit(this._connectionStatus);
     }
 
 
