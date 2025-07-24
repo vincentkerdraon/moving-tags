@@ -99,10 +99,12 @@ export class SyncService {
   }
 
   private handleDeviceIdMessage(parsed: DeviceIdMessage): void {
+    console.log('[SyncService] Received peer deviceId:', parsed.deviceId);
+
+    this.network.handleDeviceIdMessage(parsed);
     const deviceId = this.network.deviceId;
     const lastSync = this.lastSync;
 
-    console.log('[SyncService] Received peer deviceId:', parsed.deviceId);
     if (!(parsed.deviceId in lastSync)) {
       this.setLastSync(parsed.deviceId, new Date());
     }

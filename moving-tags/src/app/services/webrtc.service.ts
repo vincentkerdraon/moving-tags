@@ -192,10 +192,31 @@ export class WebRTCService {
         });
     }
 
-    forceReconnect(): void {
-        console.log('[WebRTCService] Force reconnect requested');
-        this.close();
-        this.initialize();
+    tryReconnect(): void {
+        console.log('[WebRTCService] Attempting ICE restart for connection recovery');
+        
+        if (this.peerConnection && 
+            (this.peerConnection.connectionState === 'disconnected' || 
+             this.peerConnection.connectionState === 'failed')) {
+            
+            // Add ICE restart event listener
+            this.peerConnection.addEventListener("iceconnectionstatechange", (event) => {
+                const pc = this.peerConnection!;
+                console.log('[WebRTCService] ICE connection state:', pc.iceConnectionState);
+                
+                if (pc.iceConnectionState === "failed" || pc.iceConnectionState === "disconnected") {
+                    console.log('[WebRTCService] ICE restart triggered due to connection failure');
+                    pc.restartIce();
+                }
+            });
+            
+            // Trigger ICE restart immediately if connection is failed
+            this.peerConnection.restartIce();
+        } else {
+            console.log('[WebRTCService] No valid connection to restart, creating new connection');
+            this.close();
+            this.initialize();
+        }
     }
 
     close(): void {

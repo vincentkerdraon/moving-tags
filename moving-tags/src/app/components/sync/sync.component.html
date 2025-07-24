@@ -44,11 +44,14 @@
           Disconnect
         </button>
         <button
-          *ngIf="network.connectionStatus == 'not connected'"
+          *ngIf="
+            network.connectionStatus == 'not connected' &&
+            network.couldReconnect
+          "
           class="btn btn-sm btn-outline-secondary ms-2"
-          (click)="forceReconnect()"
+          (click)="tryReconnect()"
         >
-          Force Reconnect
+          Try Reconnect
         </button>
       </div>
     </div>
@@ -139,7 +142,7 @@
               />
               <button
                 class="btn btn-outline-primary fs-5"
-                (click)="onProcessServerAnswer()"
+                (click)="onInputServerAnswer()"
                 [disabled]="!serverAnswerInput.trim()"
               >
                 <span aria-hidden="true">✨</span>
@@ -150,7 +153,7 @@
           <!-- QR Scanner Modal (shared for both client/server) -->
           <app-qr-scanner
             *ngIf="showScanner"
-            (scanResult)="onServerScanResult($event)"
+            (scanResult)="onScanServerAnswer($event)"
             (close)="showScanner = false"
           >
           </app-qr-scanner>

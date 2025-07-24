@@ -71,8 +71,8 @@ export class SyncComponent implements OnInit {
     this.syncService.triggerSync();
     this.cdr.detectChanges();
   }
-  forceReconnect() {
-    this.webrtc.forceReconnect();
+  tryReconnect() {
+    this.network.reconnect();
   }
 
   // === Server Mode ===
@@ -134,7 +134,7 @@ export class SyncComponent implements OnInit {
           throw new Error('Failed to decompress offer data');
         }
       }
-      await this.webrtc.connectAsClient(offerData, (answer) => {
+      await this.network.connectAsClient(offerData, (answer) => {
         this.clientAnswer = answer;
         console.log(`[SyncComponent] Client answer ready${scanned ? ' (scanned)' : ''}`);
         this.cdr.detectChanges();
@@ -152,29 +152,29 @@ export class SyncComponent implements OnInit {
   /**
    * Process the server answer from manual input (button click)
    */
-  async onProcessServerAnswer() {
-    await this.processServerAnswerString(this.serverAnswerInput, false);
+  async onInputServerAnswer() {
+    await this.processServerAnswer(this.serverAnswerInput, false);
   }
 
   /**
    * Process the server answer from a scanned QR code (direct, no input field)
    */
-  async onServerScanResult(result: string) {
+  async onScanServerAnswer(result: string) {
     this.showScanner = false;
-    await this.processServerAnswerString(result, true);
+    await this.processServerAnswer(result, true);
   }
 
   /**
    * Shared logic for processing server answers (manual or scanned)
    */
-  private async processServerAnswerString(answer: string, scanned: boolean) {
+  private async processServerAnswer(answer: string, scanned: boolean) {
     try {
       const compressedAnswer = answer.trim();
       const answerData = decompressFromEncodedURIComponent(compressedAnswer);
       if (!answerData) {
         throw new Error('Failed to decompress answer data');
       }
-      await this.webrtc.processAnswer(answerData);
+      await this.network.processAnswer(answerData);
       console.log(`[SyncComponent] Server processed answer successfully${scanned ? ' (scanned)' : ''}`);
       this.cdr.detectChanges();
     } catch (error: any) {

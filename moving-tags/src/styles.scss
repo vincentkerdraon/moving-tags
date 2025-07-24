@@ -1,3 +1,6 @@
+
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
 // Input group: square sides for left and right buttons
 .input-group > .btn:first-child {
   border-top-right-radius: 0 !important;
@@ -84,7 +87,6 @@ select.form-select option {
   box-shadow: 0 2px 8px rgba(255,225,86,0.10);
 }
 
-@import 'bootstrap/dist/css/bootstrap.min.css';
 
 
 // Funky popup (modal, alert) styles
