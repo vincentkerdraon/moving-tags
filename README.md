@@ -30,3 +30,12 @@ ssh -R 80:localhost:8080 nokey@localhost.run
 #projects → moving-tags → architect → serve → options → allowedHosts
 ng serve --host=0.0.0.0 --disable-host-check
 ```
+
+running unit tests
+
+```bash
+sudo apt-get update && sudo apt-get install -y chromium
+export CHROME_BIN=$(which chromium)
+cd /workspaces/moving-tags/moving-tags
+ng test
+```

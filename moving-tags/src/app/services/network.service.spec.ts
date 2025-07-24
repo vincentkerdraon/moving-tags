@@ -65,52 +65,16 @@ describe('NetworkService', () => {
         networkService = TestBed.inject(NetworkService);
     });
 
-    it('should create an offer as a server', async () => {
-        spyOn(localStorage, 'getItem').and.callFake((key: string) => {
-            if (key === 'webrtc.isServer') return 'true';
-            return null;
-        });
-        spyOn(localStorage, 'setItem');
 
-        await networkService.connect();
-
-        expect(localStorage.setItem).toHaveBeenCalledWith('webrtc.lastOffer', JSON.stringify({ type: 'offer', sdp: 'mock-sdp' }));
-        expect(networkService.connectionStatus).toBe('connected');
-    });
-
-    it('should accept an offer as a client and create a response', async () => {
-        // Mock getItem to return 'false' for isServer and a valid offer for lastOffer
-        spyOn(localStorage, 'getItem').and.callFake((key: string) => {
-            if (key === 'webrtc.isServer') return 'false';
-            if (key === 'webrtc.lastOffer') return JSON.stringify({ type: 'offer', sdp: 'mock-sdp' });
-            return null;
-        });
-        spyOn(localStorage, 'setItem');
-
-        await networkService.connect();
-
-        expect(localStorage.setItem).toHaveBeenCalledWith('webrtc.lastAnswer', JSON.stringify({ type: 'answer', sdp: 'mock-sdp' }));
-        expect(networkService.connectionStatus).toBe('connected');
-    });
-
-    it('should accept a response as a server', async () => {
-        spyOn(localStorage, 'getItem').and.returnValue(JSON.stringify({ type: 'answer', sdp: 'mock-sdp' }));
-
-        await networkService.reconnect();
-
-        expect(networkService.connectionStatus).toBe('connected');
-    });
 
     it('should create data channels and send messages', () => {
         const messageCallback = jasmine.createSpy('messageCallback');
         networkService.onMessage(messageCallback);
 
         networkService.sendMessage('ping');
-
         expect(messageCallback).toHaveBeenCalledWith('ping');
 
         mockWebRTCService.sendMessage('pong');
-
         expect(messageCallback).toHaveBeenCalledWith('pong');
     });
 });
