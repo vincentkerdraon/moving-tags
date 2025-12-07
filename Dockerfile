@@ -11,7 +11,7 @@ RUN npm install -g @angular/cli
 COPY moving-tags/public ./public
 COPY moving-tags/src ./src
 COPY moving-tags/*.json ./
-RUN npm install && ng build --configuration production --base-href $BASE_HREF
+RUN npm install --force && ng build --configuration production --base-href $BASE_HREF
 
 # Nginx stage
 FROM nginx:alpine
